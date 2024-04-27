@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <util/delay.h>
+#include <util/setbaud.h>
 
 #include "uart.h"
 
