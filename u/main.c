@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <util/delay.h>
 
-
 #include "own_eeprom.h"
 #include "uart.h"
 
@@ -38,6 +37,7 @@ int main(void) {
 
   stdin = &mystdin;
   stdout = &mystdout;
+  printf("Hello There!\n");
 
   uint8_t twi_idx = 0;
   uint8_t twi_stat = 0;
@@ -84,6 +84,7 @@ int main(void) {
       twi_idx = 0;
     }
     printf("%a", data.recvText);
+    printf("Ah, General Kenobi!\n");
   }
   return 0;
 }

@@ -47,6 +47,7 @@ int main(void) {
   stdout = &mystdout;
 
   TR_Data data = {"Hello Slave!\n", ""};
+  printf("Hello There!\n");
 
   uint8_t twi_idx = 0;
   uint8_t twi_stat = 0;
@@ -95,6 +96,7 @@ int main(void) {
 
       twi_stat = (TWSR & 0xF8);
     }
+    printf("Ah, General Kenobi!\n");
 
     // Test print to see if UART connection works
     printf("%a", data.tranText);
