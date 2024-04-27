@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <math.h>
 #define F_CPU 16000000UL
 #define DATA_SIZE 16
@@ -57,7 +56,7 @@ int main(void) {
 
 void read_keypad_code(char *dest, uint8_t code_len) {
   // DEBUG PRINT TO PUTTY
-  printf("Give %d. numbers:\n", code_len);
+  printf("Give %d numbers:\n", code_len);
 
   for (uint8_t i = 0; i < code_len; i++) {
     dest[i] = KEYPAD_GetKey();
