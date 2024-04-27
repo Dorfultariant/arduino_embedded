@@ -32,11 +32,12 @@ $(TARGET).hex:$(TARGET).c lcd.o
 upload: $(TARGET).hex
 	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
 
-
 # Tidying folder
 clean:
 	rm -f $(TARGET).elf $(TARGET).hex lcd.o
 
+
+# NOTE: ADDITIONAL LIBRARIES
 lcd.o: lcd.c lcd.h
 	$(CC) $(CFLAGS) -c lcd.c -o lcd.o
 

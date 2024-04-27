@@ -1,6 +1,8 @@
-#include <stdint.h>
 #define F_CPU 16000000UL
 #define SLAVE_ADDRESS 85
+#define BAUD 9600
+#define MYUBRR F_CPU / 16 / BAUD - 1
+#define DATA_SIZE 16
 
 #include <avr/io.h>
 #include <stdlib.h>
@@ -8,13 +10,15 @@
 
 #include <avr/interrupt.h>
 
+#include "own_eeprom.h"
+#include "uart.h"
+
 const int BUILTIN_LED = PB5;
 
-const int SDA PC4;
+const int SDA = PC4;
 const int SCL = PC5;
 
-const uint8_t DATA_SIZE = 16;
-// 32 Bytes worth of data
+//  32 Bytes worth of data
 typedef struct tr_data {
   char tranText[DATA_SIZE];
   char recvText[DATA_SIZE];
@@ -22,12 +26,17 @@ typedef struct tr_data {
 
 int main(void) {
 
-  DDRC &= ~(1 << SDA) & ~(1 << SDL);
+  // DDRC &= ~(1 << SDA) & ~(1 << SDL);
 
   // // Turn off led
   DDRB &= ~(1 << BUILTIN_LED);
 
-  TR_Data data = {"Hello my Master\n", ""};
+  TR_Data data = {"Hello Master\n", ""};
+
+  USART_Init(MYUBRR);
+
+  stdin = &mystdin;
+  stdout = &mystdout;
 
   uint8_t twi_idx = 0;
   uint8_t twi_stat = 0;
@@ -63,7 +72,7 @@ int main(void) {
       data.recvText[twi_idx] = TWDR;
       twi_idx++;
     } else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
-      twi_receive_data[twi_idx] = TWDR;
+      data.recvText[twi_idx] = TWDR;
       twi_idx++;
     } else if ((twi_stat == 0xA0)) { // STOP signal
       TWCR |= (1 << TWINT);
