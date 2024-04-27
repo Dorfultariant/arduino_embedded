@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdint.h>
 #define F_CPU 16000000UL
 #define DATA_SIZE 16
 #define BAUD 9600
@@ -40,7 +41,6 @@ int main(void) {
   while (1) {
     read_keypad_code(c, 4);
 
-    printf("\nYou inserted: %s\n", c);
     c[4] = '\0';
     uint8_t isValid = verify_code(c, correctCode);
 
@@ -58,10 +58,54 @@ void read_keypad_code(char *dest, uint8_t code_len) {
   // DEBUG PRINT TO PUTTY
   printf("Give %d numbers:\n", code_len);
 
-  for (uint8_t i = 0; i < code_len; i++) {
-    dest[i] = KEYPAD_GetKey();
-    printf("%c ", dest[i]);
-  }
+  int i = 0;
+  char c = 0;
+  // These characters are not accepted as a code:
+  char notAccepted[] = "ABCD#*";
+
+  // Get users input until the user presses [A]ccept on the keypad and user has
+  // given long enough password.
+  do {
+    c = KEYPAD_GetKey();
+
+    // If user pressed [D]elete, then last char is removed if it exists
+    if ('D' == c) {
+      // Check if there is previous char and only then remove the previous char.
+      if (0 < i) {
+        dest[--i] = '\0';
+      }
+      continue;
+    }
+
+    // Condition to check password length and break from loop
+    if (code_len <= i) {
+      if (c == 'A') {
+        break;
+      }
+      // We want to get the last 4 digits given by the user:
+      for (int j = 0; j < code_len - 1; j++) {
+        dest[j] = dest[j + 1];
+      }
+      dest[code_len - 1] = c;
+      continue;
+    }
+
+    // Check for unacceptable chars such as B, C, #, *
+    for (char *ptr = notAccepted; *ptr != '\0'; ptr++) {
+      if (c == *ptr) {
+        c = 0;
+        break;
+      }
+    }
+    if (0 == c) {
+      continue;
+    }
+
+    // If all the checks pass, we can accept the given number
+    dest[i] = c;
+    i++;
+  } while (1);
+  printf("Your code: %s \n", dest);
 }
 
 int verify_code(char *to_be_checked, char *correct) {
