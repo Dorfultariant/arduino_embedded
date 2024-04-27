@@ -50,7 +50,7 @@ int main(void) {
   TWCR &= ~(1 << TWSTA) & ~(1 << TWSTO);
 
   while (1) {
-
+    PORTB &= ~(1 << BUILTIN_LED);
     // wait for transmission:
     while (!(TWCR & (1 << TWINT)))
       ;
@@ -82,7 +82,7 @@ int main(void) {
     }
     if (DATA_SIZE <= twi_idx) {
       // Turn the led on
-      printf(data.recvText);
+      printf("%a", data.recvText);
       PORTB |= (1 << BUILTIN_LED);
       twi_idx = 0;
     }
