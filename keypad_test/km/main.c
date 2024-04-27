@@ -36,8 +36,9 @@ int main(void) {
   while (1) {
     printf("Give numbers:\n");
 
-    for (uint8_t i = 0; i <= 4; i++) {
+    for (uint8_t i = 0; i < 4; i++) {
       c[i] = KEYPAD_GetKey();
+      printf("%c ", c[i]);
     }
 
     printf("\nYou inserted: %a\n", c);
