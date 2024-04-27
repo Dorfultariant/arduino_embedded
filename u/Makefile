@@ -24,8 +24,8 @@ AVRDUDE=avrdude -c $(PROGRAMMER) -p $(MCU) -P $(PORT) -b $(BAUD)
 all: $(TARGET).hex upload clean
 
 # Compilation process
-$(TARGET).hex:$(TARGET).c uart.o own_eeprom.o
-	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c uart.o own_eeprom.o
+$(TARGET).hex:$(TARGET).c uart.o
+	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c uart.o
 	avr-objcopy -O ihex -R .eeprom $(TARGET).elf $(TARGET).hex
 
 # Bit banging
@@ -34,15 +34,15 @@ upload: $(TARGET).hex
 
 # Tidying folder
 clean:
-	rm -f $(TARGET).elf $(TARGET).hex own_eeprom.o uart.o
+	rm -f $(TARGET).elf $(TARGET).hex uart.o
 
 
 # NOTE: ADDITIONAL LIBRARIES
 uart.o: uart.c uart.h
 	$(CC) $(CFLAGS) -c uart.c -o uart.o
-
-own_eeprom.o: own_eeprom.c own_eeprom.h
-	$(CC) $(CFLAGS) -c own_eeprom.c -o own_eeprom.o
+#
+# own_eeprom.o: own_eeprom.c own_eeprom.h
+# 	$(CC) $(CFLAGS) -c own_eeprom.c -o own_eeprom.o
 
 # run "make all" to run compilation, upload and clean
 

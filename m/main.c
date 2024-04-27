@@ -31,16 +31,18 @@ typedef struct tr_data {
 
 int main(void) {
   // Output modes for LCD
+  /*
   DDRB |= (1 << LCD_RW) | (1 << LCD_EN);
   DDRE |= (1 << LCD_D4) | (1 << LCD_D6);
   DDRG |= (1 << LCD_D5);
-  DDRH |= (1 << LCD_RS) | (1 << LCD_D7);
+  DDRH |= (1 << LCD_RS) | (1 << LCD_D7);*/
 
   // DDRB &= ~(1 << LED_BUILTIN);
 
   // LCD initialization
   // lcd_init(LCD_DISP_ON);
   // lcd_gotoxy(0, 0);
+
   USART_Init(MYUBRR);
 
   stdin = &mystdin;
@@ -49,7 +51,7 @@ int main(void) {
   TR_Data data = {"Hello Slave!\n", ""};
   printf("Hello There!\n");
 
-  uint8_t twi_idx = 0;
+  // uint8_t twi_idx = 0;
   uint8_t twi_stat = 0;
 
   // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
@@ -73,6 +75,10 @@ int main(void) {
 
     twi_stat = (TWSR & 0xF8);
 
+    itoa(twi_stat, data.recvText, 16);
+    printf(data.recvText);
+    printf(" ");
+
     // Slave address
     TWDR = 0b10101010;
 
@@ -85,6 +91,10 @@ int main(void) {
 
     twi_stat = (TWSR & 0xF8);
 
+    itoa(twi_stat, data.recvText, 16);
+    printf(data.recvText);
+    printf(" ");
+
     // Send data byte at a time
     for (uint8_t twi_d_idx = 0; twi_d_idx < DATA_SIZE; twi_d_idx++) {
       TWDR = data.tranText[twi_d_idx];
@@ -95,11 +105,14 @@ int main(void) {
         ;
 
       twi_stat = (TWSR & 0xF8);
+      itoa(twi_stat, data.recvText, 16);
+      printf(data.recvText);
+      printf(" ");
     }
-    printf("Ah, General Kenobi!\n");
+    printf("\nAh, General Kenobi!\n");
 
     // Test print to see if UART connection works
-    printf("%a", data.tranText);
+    // printf("%a", data.tranText);
 
     // Turn on the led
     PORTB |= (1 << LED_BUILTIN);

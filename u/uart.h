@@ -5,6 +5,7 @@
 #include <avr/io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <util/setbaud.h>
 
 // Initialize the USART with registers
 void USART_Init(unsigned int ubrr);

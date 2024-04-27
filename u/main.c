@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <util/delay.h>
 
-#include "own_eeprom.h"
 #include "uart.h"
 
 const int BUILTIN_LED = PB5;
@@ -44,6 +43,7 @@ int main(void) {
 
   // LSB --> 170
   TWAR = 0b10101010;
+
   // Slave receiver mode setup from documentation:
   TWCR |= (1 << TWEA) | (1 << TWEN);
   TWCR &= ~(1 << TWSTA) & ~(1 << TWSTO);
@@ -66,6 +66,7 @@ int main(void) {
 
     // Set status
     twi_stat = (TWSR & 0xF8);
+
     // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
     // Condition check of twi_status if previous was response of either slave
     // address or general call and NOT ACK return
@@ -80,10 +81,10 @@ int main(void) {
     }
     if (DATA_SIZE <= twi_idx) {
       // Turn the led on
+      printf(data.recvText);
       PORTB |= (1 << BUILTIN_LED);
       twi_idx = 0;
     }
-    printf("%a", data.recvText);
     printf("Ah, General Kenobi!\n");
   }
   return 0;
