@@ -21,7 +21,7 @@ CFLAGS=-g -Os -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 AVRDUDE=avrdude -c $(PROGRAMMER) -p $(MCU) -P $(PORT) -b $(BAUD)
 
 # Target for all: upload
-all: $(TARGET).hex clean
+all: $(TARGET).hex upload clean
 
 # Compilation process
 $(TARGET).hex:$(TARGET).c uart.o own_eeprom.o

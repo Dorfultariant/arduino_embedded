@@ -1,7 +1,8 @@
 # Parameters:
 F_CPU=16000000UL
 
-MCU=atmega2560 # With atmega 2560 MCU -> atmega2560
+# With atmega 2560 MCU -> atmega2560
+MCU=atmega2560
 
 PROGRAMMER=wiring
 
@@ -23,22 +24,24 @@ AVRDUDE=avrdude -c $(PROGRAMMER) -p $(MCU) -P $(PORT) -b $(BAUD)
 # Target for all:
 all: $(TARGET).hex upload clean
 
-# Compilation process
-$(TARGET).hex:$(TARGET).c lcd.o
-	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c lcd.o
-	avr-objcopy -OD ihex -R .eeprom $(TARGET).elf $(TARGET).hex
+# Compilation process lcd.o
+$(TARGET).hex:$(TARGET).c uart.o
+	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c uart.o
+	avr-objcopy -O ihex -R .eeprom $(TARGET).elf $(TARGET).hex
 
 # Bit banging
 upload: $(TARGET).hex
-	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
+	$(AVRDUDE) -DU flash:w:$(TARGET).hex:i
 
 # Tidying folder
 clean:
-	rm -f $(TARGET).elf $(TARGET).hex lcd.o
+	rm -f $(TARGET).elf $(TARGET).hex uart.o
 
 
 # NOTE: ADDITIONAL LIBRARIES
-lcd.o: lcd.c lcd.h
-	$(CC) $(CFLAGS) -c lcd.c -o lcd.o
+#lcd.o: lcd.c lcd.h
+#	$(CC) $(CFLAGS) -c lcd.c -o lcd.o
+uart.o: uart.c uart.h
+	$(CC) $(CFLAGS) -c uart.c -o uart.o
 
 # run "make all" to run compilation, upload and clean

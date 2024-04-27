@@ -4,11 +4,12 @@
 #define MYUBRR F_CPU / 16 / BAUD - 1
 #define DATA_SIZE 16
 
+#include <avr/interrupt.h>
 #include <avr/io.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <util/delay.h>
 
-#include <avr/interrupt.h>
 
 #include "own_eeprom.h"
 #include "uart.h"
@@ -28,7 +29,7 @@ int main(void) {
 
   // DDRC &= ~(1 << SDA) & ~(1 << SDL);
 
-  // // Turn off led
+  // Turn off led
   DDRB &= ~(1 << BUILTIN_LED);
 
   TR_Data data = {"Hello Master\n", ""};
@@ -82,6 +83,7 @@ int main(void) {
       PORTB |= (1 << BUILTIN_LED);
       twi_idx = 0;
     }
+    printf("%a", data.recvText);
   }
   return 0;
 }
