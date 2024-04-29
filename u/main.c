@@ -1,3 +1,4 @@
+#include <stdint.h>
 #define F_CPU 16000000UL
 #define SLAVE_ADDRESS 85
 #define BAUD 9600
@@ -24,12 +25,10 @@ typedef struct tr_data {
   char recvText[DATA_SIZE];
 } TR_Data;
 
+void TWI_Init(uint8_t address);
+void TWI_Receive(char *dest);
+
 int main(void) {
-
-  // DDRC &= ~(1 << SDA) & ~(1 << SDL);
-
-  // Turn off led
-  DDRB &= ~(1 << BUILTIN_LED);
 
   TR_Data data = {"Hello Master\n", ""};
 
@@ -37,56 +36,67 @@ int main(void) {
 
   stdin = &mystdin;
   stdout = &mystdout;
+
   printf("Hello There!\n");
 
-  uint8_t twi_idx = 0;
-  uint8_t twi_stat = 0;
+  TWI_Init(170);
 
+  while (1) {
+    TWI_Receive(data.recvText);
+  }
+  return 0;
+}
+
+/*
+ Function to setup the UNO as slave:
+ */
+void TWI_Init(uint8_t address) {
   // LSB --> 170
-  TWAR = 0b10101010;
+  TWAR = address;
 
   // Slave receiver mode setup from documentation:
   TWCR |= (1 << TWEA) | (1 << TWEN);
   TWCR &= ~(1 << TWSTA) & ~(1 << TWSTO);
+}
 
-  while (1) {
-    PORTB &= ~(1 << BUILTIN_LED);
-    // wait for transmission:
-    while (!(TWCR & (1 << TWINT)))
-      ;
+/*
+ Function to receive data from Master:
+ */
+void TWI_Receive(char *received) {
 
-    // Set status
-    twi_stat = (TWSR & 0xF8);
+  uint8_t twi_stat, twi_idx = 0;
 
-    // Reset the TWEA and TWEN and create ACK
-    TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
+  // wait for transmission:
+  while (!(TWCR & (1 << TWINT)))
+    ;
 
-    // Waiting for TWINT to set:
-    while (!(TWCR & (1 << TWINT)))
-      ;
+  // Set status
+  twi_stat = (TWSR & 0xF8);
 
-    // Set status
-    twi_stat = (TWSR & 0xF8);
+  // Reset the TWEA and TWEN and create ACK
+  TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
 
-    // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
-    // Condition check of twi_status if previous was response of either slave
-    // address or general call and NOT ACK return
-    if ((twi_stat == 0x80) || (twi_stat == 0x90)) {
-      data.recvText[twi_idx] = TWDR;
-      twi_idx++;
-    } else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
-      data.recvText[twi_idx] = TWDR;
-      twi_idx++;
-    } else if ((twi_stat == 0xA0)) { // STOP signal
-      TWCR |= (1 << TWINT);
-    }
-    if (DATA_SIZE <= twi_idx) {
-      // Turn the led on
-      printf("%a", data.recvText);
-      PORTB |= (1 << BUILTIN_LED);
-      twi_idx = 0;
-    }
-    printf("Ah, General Kenobi!\n");
+  // Waiting for TWINT to set:
+  while (!(TWCR & (1 << TWINT)))
+    ;
+
+  // Set status
+  twi_stat = (TWSR & 0xF8);
+
+  // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
+  // Condition check of twi_status if previous was response of either slave
+  // address or general call and NOT ACK return
+  if ((twi_stat == 0x80) || (twi_stat == 0x90)) {
+    received[twi_idx] = TWDR;
+    twi_idx++;
+  } else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
+    received[twi_idx] = TWDR;
+    twi_idx++;
+  } else if ((twi_stat == 0xA0)) { // STOP signal
+    TWCR |= (1 << TWINT);
   }
-  return 0;
+  if (DATA_SIZE <= twi_idx) {
+    printf("%s", received);
+    twi_idx = 0;
+  }
 }

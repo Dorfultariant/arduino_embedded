@@ -1,3 +1,4 @@
+
 #define F_CPU 16000000UL
 #define DATA_SIZE 16
 #define BAUD 9600
@@ -30,19 +31,11 @@ typedef struct tr_data {
   char recvText[DATA_SIZE];
 } TR_Data;
 
+void TWI_Init();
+
+void TWI_Transmit(char *data);
+
 int main(void) {
-  // Output modes for LCD
-  /*
-  DDRB |= (1 << LCD_RW) | (1 << LCD_EN);
-  DDRE |= (1 << LCD_D4) | (1 << LCD_D6);
-  DDRG |= (1 << LCD_D5);
-  DDRH |= (1 << LCD_RS) | (1 << LCD_D7);*/
-
-  // DDRB &= ~(1 << LED_BUILTIN);
-
-  // LCD initialization
-  // lcd_init(LCD_DISP_ON);
-  // lcd_gotoxy(0, 0);
 
   USART_Init(MYUBRR);
 
@@ -53,76 +46,73 @@ int main(void) {
   printf("Hello There!\n");
 
   // uint8_t twi_idx = 0;
-  uint8_t twi_stat = 0;
+  TWI_Init();
 
+  while (1) {
+    // Turn the led off
+    DDRB &= ~(1 << LED_BUILTIN);
+
+    TWI_Transmit(170, data.tranText);
+
+    PORTB |= (1 << LED_BUILTIN);
+
+    _delay_ms(1000);
+  }
+
+  return 0;
+}
+
+void TWI_Init() {
   // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
   // 4^(TWSR):
 
   TWSR = 0x00;         // Prescaler to 1
   TWBR = 0x03;         // 3x multiplier to achieve 400 kHz
   TWCR |= (1 << TWEN); // TWI enable
+}
 
-  while (1) {
-    // Turn the led off
-    DDRB &= ~(1 << LED_BUILTIN);
+void TWI_Transmit(uint8_t address, char *data) {
+  uint8_t twi_stat = 0;
 
-    // Start transmission:
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+  // Start transmission:
+  TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 
-    while (!(TWCR & (1 << TWINT)))
-      ;
+  while (!(TWCR & (1 << TWINT)))
+    ;
 
-    // Read status from TWI status register
+  // Read status from TWI status register
 
-    twi_stat = (TWSR & 0xF8);
+  twi_stat = (TWSR & 0xF8);
 
-    itoa(twi_stat, data.recvText, 16);
-    printf(data.recvText);
-    printf(" ");
+  // Slave address
+  TWDR = address;
 
-    // Slave address
-    TWDR = 0b10101010;
+  // Clear TWINT to start transmit to slave + write
+  TWCR = (1 << TWINT) | (1 << TWEN);
 
-    // Clear TWINT to start transmit to slave + write
+  // Wait TWINT to set
+  while (!(TWCR & (1 << TWINT)))
+    ;
+
+  twi_stat = (TWSR & 0xF8);
+
+  // Send data byte at a time
+  for (uint8_t twi_d_idx = 0; twi_d_idx < DATA_SIZE; twi_d_idx++) {
+    TWDR = data[twi_d_idx];
+
+    // Reset TWINT to transmit data
     TWCR = (1 << TWINT) | (1 << TWEN);
 
-    // Wait TWINT to set
+    // Wait for TWINT to set
     while (!(TWCR & (1 << TWINT)))
       ;
 
     twi_stat = (TWSR & 0xF8);
-
-    itoa(twi_stat, data.recvText, 16);
-    printf(data.recvText);
-    printf(" ");
-
-    // Send data byte at a time
-    for (uint8_t twi_d_idx = 0; twi_d_idx < DATA_SIZE; twi_d_idx++) {
-      TWDR = data.tranText[twi_d_idx];
-      // Reset TWINT to transmit data
-      TWCR = (1 << TWINT) | (1 << TWEN);
-      // Wait for TWINT to set
-      while (!(TWCR & (1 << TWINT)))
-        ;
-
-      twi_stat = (TWSR & 0xF8);
-      itoa(twi_stat, data.recvText, 16);
-      printf(data.recvText);
-      printf(" ");
-    }
-    printf("\nAh, General Kenobi!\n");
-
-    // Test print to see if UART connection works
-    // printf("%a", data.tranText);
-
-    // Turn on the led
-    PORTB |= (1 << LED_BUILTIN);
-
-    // STOP transmission
-    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-
-    _delay_ms(1000);
   }
 
-  return 0;
+  // Data sent:
+  printf("%s", data);
+
+  // STOP transmission
+  TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
 }

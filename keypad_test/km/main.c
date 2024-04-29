@@ -1,5 +1,4 @@
-#include <math.h>
-#include <stdint.h>
+
 #define F_CPU 16000000UL
 #define DATA_SIZE 16
 #define BAUD 9600
