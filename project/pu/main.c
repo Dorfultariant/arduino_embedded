@@ -108,7 +108,7 @@ int main(void) {
     getSystemState(recv);
     switch (state) {
     case PIR_SENSE:
-      lcd_puts("Movement detection.");
+      lcd_puts("PIR detect");
       break;
 
     case ALARM_ON:

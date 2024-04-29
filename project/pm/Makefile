@@ -23,7 +23,7 @@ LIBS=uart.o timer3.o keypad.o delay.o
 AVRDUDE=avrdude -c $(PROGRAMMER) -p $(MCU) -P $(PORT) -b $(BAUD)
 
 # Target for all:
-all: $(TARGET).hex clean
+all: $(TARGET).hex upload clean
 
 # Compilation process
 $(TARGET).hex:$(TARGET).c $(LIBS)

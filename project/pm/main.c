@@ -39,8 +39,8 @@
 #include "timer3.h"
 #include "uart.h"
 
-const int PIR_SIGNAL = PE4;
-const int ALARM = PH3;
+const int PIR_SIGNAL = PE3;
+const int ALARM_LED = PH3;
 const int REARM_BTN = PH4;
 
 // State machine state
@@ -83,7 +83,7 @@ int main(void) {
   char usersCode[CODE_ARRAY_LENGTH] = {'\0'};
 
   // Output demo for alarm buzzer (currently RED LED)
-  DDRH |= (1 << ALARM);
+  DDRH |= (1 << ALARM_LED);
 
   // PIR sensor input upon movement (currently BUTTON)
   DDRE &= ~(1 << PIR_SIGNAL);
@@ -124,7 +124,7 @@ int main(void) {
       break;
 
     case ALARM_ON:
-      PORTH |= (1 << ALARM);
+      PORTH |= (1 << ALARM_LED);
       TWI_Init();
       TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
 
@@ -146,7 +146,7 @@ int main(void) {
         second_counter = 0;
 
         // Turn off alarm
-        PORTH &= ~(1 << ALARM);
+        PORTH &= ~(1 << ALARM_LED);
 
         // Transmit information to Slave
         TWI_Init();
