@@ -1,6 +1,6 @@
 #include "timer1.h"
 #define F_CPU 16000000UL
-#define SLAVE_ADDRESS 117
+#define SLAVE_ADDRESS 170
 #define BAUD 9600
 #define MYUBRR F_CPU / 16 / BAUD - 1
 
@@ -61,6 +61,9 @@ const int LCD_D5 = PD5;
 const int LCD_D6 = PD6;
 const int LCD_D7 = PD7;
 
+// Buzzer
+const int BUZZER = PB1;
+
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 
@@ -73,6 +76,8 @@ int main(void) {
   DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN);
   // OUTPUTS DATA
   DDRD |= (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
+
+  DDRB |= (1 << BUZZER);
 
   // Initialize empty recv char array
   char recv[DATA_SIZE] = {'\0'};
@@ -96,24 +101,37 @@ int main(void) {
   // Test print to putty
   printf("Hello There!\n");
 
+  singASong();
+  //   TIMER1_Init_Mode_9();
+  //   TIMER1_SetPrescaler(PS_64);
+  //
+
   // Setup TWI communication with Master
   I2C_InitSlaveReceiver(SLAVE_ADDRESS);
 
   while (1) {
     if (data_incoming) {
       I2C_Receive(recv);
+      printf("Data incoming...\n");
       data_incoming = 0;
+      lcd_clrscr();
+      lcd_puts("Status: ");
+      lcd_gotoxy(0, 1);
+      lcd_puts(recv);
     }
 
-    getSystemState(recv);
     switch (state) {
     case PIR_SENSE:
-      lcd_puts("PIR detect");
+      lcd_clrscr();
+      lcd_puts(recv);
+      // printf("PIR detecting...\n");
       break;
 
     case ALARM_ON:
       lcd_puts("ALARM!!!");
       singASong();
+      printf("ALARM!!!...\n");
+
       state = WAIT_CORRECT_KEY;
       break;
 
@@ -124,16 +142,14 @@ int main(void) {
       break;
 
     case WAIT_CORRECT_KEY:
+      printf("Correct key...\n");
       break;
 
     case IDLE:
       lcd_puts("Idling at 16MHz...");
       break;
     }
-    lcd_clrscr();
-    lcd_puts("Status: ");
-    lcd_gotoxy(0, 1);
-    lcd_puts(recv);
+    getSystemState(recv);
   }
 
   return 0;
@@ -147,12 +163,20 @@ int main(void) {
  */
 void getSystemState(char *data) {
   if (strcomp(data, "ALARM ON")) {
+    printf("ALARM set ON...\n");
     state = ALARM_ON;
+
   } else if (strcomp(data, "ALARM OFF")) {
+    printf("ALARM set OFF...\n");
     state = ALARM_OFF;
+
   } else if (strcomp(data, "CORRECT")) {
+    printf("Correct code given...\n");
     state = ALARM_OFF;
   }
+
+  printf("PIR is sensing...\n");
+
   state = PIR_SENSE;
 }
 

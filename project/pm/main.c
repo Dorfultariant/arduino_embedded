@@ -70,7 +70,10 @@ volatile uint16_t second_counter = 0;
 ISR(TIMER3_COMPA_vect) {
   TCNT3 = 0;
   if (ALARM_TIMER <= second_counter) {
-    state = ALARM_ON;
+    // state = ALARM_ON;
+    TWI_Init();
+    TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
+    printf("SOUND THE ALARM\n");
   }
   second_counter++;
   printf("%d ", second_counter);
