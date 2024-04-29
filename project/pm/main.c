@@ -73,6 +73,7 @@ ISR(TIMER3_COMPA_vect) {
     state = ALARM_ON;
   }
   second_counter++;
+  printf("%d ", second_counter);
 }
 
 int main(void) {
@@ -109,7 +110,9 @@ int main(void) {
       // If PIR senses movement start timer
       if (PINE & (1 << PIR_SIGNAL)) {
         state = TIMER_ON;
+        printf("Timer started\n");
       }
+      printf("%d ", second_counter);
       break;
 
     case TIMER_ON:
@@ -119,6 +122,7 @@ int main(void) {
       // Setting the timer 3 to interrupt every second
       TIMER3_SetIntervalSecond();
 
+      printf("%d ", second_counter);
       // Wait for correct user input.
       state = KEY_INSERTION;
       break;
@@ -127,15 +131,17 @@ int main(void) {
       PORTH |= (1 << ALARM_LED);
       TWI_Init();
       TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
-
+      printf("SOUND THE ALARM\n");
       // Waiting for correct key.
       state = KEY_INSERTION;
       break;
 
     case KEY_INSERTION:
+      printf("%d ", second_counter);
       read_keypad_code(usersCode, CODE_ARRAY_LENGTH - 1);
       isCodeValid = verify_code(usersCode, correctCode);
       if (isCodeValid) {
+        printf("Valid code given.\n");
         // Clear timer and turn it "off"
         TIMER3_Clear();
 
@@ -158,6 +164,7 @@ int main(void) {
       break;
 
     case PIR_TIMER_ALARM_OFF: // Idle state
+      printf("Idling at 16Mhz...\n");
       // Waiting for system rearming.
       if (PINH % (1 << REARM_BTN)) {
         state = PIR_SENSE;
@@ -178,7 +185,6 @@ int main(void) {
 void TWI_Init() {
   // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
   // 4^(TWSR):
-
   TWSR = 0x00;         // Prescaler to 1
   TWBR = 0x03;         // 3x multiplier to achieve 400 kHz
   TWCR |= (1 << TWEN); // TWI enable
