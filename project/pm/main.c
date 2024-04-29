@@ -201,7 +201,6 @@ void TWI_Transmit(uint8_t address, char *data) {
     ;
 
   // Read status from TWI status register
-
   twi_stat = (TWSR & 0xF8);
 
   // Slave address

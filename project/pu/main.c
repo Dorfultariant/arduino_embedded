@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 // #include <stdlib.h>
-// #include <util/delay.h>
+#include <util/delay.h>
 
 #include "lcd.h"
 #include "timer1.h"
@@ -49,6 +49,7 @@ void I2C_Receive(char *dest);
 
 // Annoying sound maker
 void singASong();
+void tone(uint16_t freq_top);
 
 // LCD Display PINS WARNING remember to change from lcd.h also
 const int LCD_RS = PB2;
@@ -101,9 +102,9 @@ int main(void) {
   while (1) {
     if (data_incoming) {
       I2C_Receive(recv);
-
       data_incoming = 0;
     }
+
     getSystemState(recv);
     switch (state) {
     case PIR_SENSE:
@@ -233,19 +234,19 @@ void singASong() {
   TIMER1_Init_Mode_9();
   TIMER1_SetPrescaler(PS_64);
   for (int i = 0; i < 5; i++) {
-    tone(NOTE_64_Cs3, 200);
-    tone(NOTE_64_C5, 200);
-    tone(NOTE_64_Cs3, 200);
-    tone(NOTE_64_C5, 200);
-    tone(NOTE_64_Cs3, 200);
-    tone(NOTE_64_200, 200);
-    tone(NOTE_64_Cs3, 200);
-    tone(NOTE_64_200, 200);
+    tone(NOTE_64_Cs3);
+    tone(NOTE_64_C5);
+    tone(NOTE_64_Cs3);
+    tone(NOTE_64_C5);
+    tone(NOTE_64_Cs3);
+    tone(NOTE_64_200);
+    tone(NOTE_64_Cs3);
+    tone(NOTE_64_200);
   }
   TIMER1_Clear();
 }
 
-void tone(uint16_t freq_top, uint16_t duration_ms) {
-  TIMER1_setTarget(freq_top);
-  _delay_ms(duration_ms);
+void tone(uint16_t freq_top) {
+  TIMER1_SetTarget(freq_top);
+  _delay_ms(200);
 }
