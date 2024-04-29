@@ -8,7 +8,7 @@
 #define PS_1024 1024
 #define SECOND F_CPU / (2 * PS_1024 * 0.5)
 
-#define SLAVE_ADDRESS 117
+#define SLAVE_ADDRESS 170
 
 /*
  * State machine states:
@@ -41,7 +41,7 @@
 
 const int PIR_SIGNAL = PE3;
 const int ALARM_LED = PH3;
-const int REARM_BTN = PH4;
+const int REARM_BTN = PG5;
 
 // State machine state
 volatile int8_t state = 0;
@@ -76,7 +76,6 @@ ISR(TIMER3_COMPA_vect) {
     printf("SOUND THE ALARM\n");
   }
   second_counter++;
-  printf("%d ", second_counter);
 }
 
 int main(void) {
@@ -93,7 +92,7 @@ int main(void) {
   DDRE &= ~(1 << PIR_SIGNAL);
 
   // Input pin for rearming the system.
-  DDRH &= ~(1 << REARM_BTN);
+  DDRG &= ~(1 << REARM_BTN);
 
   // Initialize connection through USB for debugging.
   USART_Init(MYUBRR);
@@ -115,7 +114,6 @@ int main(void) {
         state = TIMER_ON;
         printf("Timer started\n");
       }
-      printf("%d ", second_counter);
       break;
 
     case TIMER_ON:
@@ -132,15 +130,12 @@ int main(void) {
 
     case ALARM_ON:
       PORTH |= (1 << ALARM_LED);
-      TWI_Init();
-      TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
-      printf("SOUND THE ALARM\n");
+
       // Waiting for correct key.
       state = KEY_INSERTION;
       break;
 
     case KEY_INSERTION:
-      printf("%d ", second_counter);
       read_keypad_code(usersCode, CODE_ARRAY_LENGTH - 1);
       isCodeValid = verify_code(usersCode, correctCode);
       if (isCodeValid) {
@@ -169,9 +164,12 @@ int main(void) {
     case PIR_TIMER_ALARM_OFF: // Idle state
       printf("Idling at 16Mhz...\n");
       // Waiting for system rearming.
-      if (PINH % (1 << REARM_BTN)) {
+      if (PING % (1 << REARM_BTN)) {
+        printf("Re arm High\n");
         state = PIR_SENSE;
+        isCodeValid = 0;
       }
+      // state = PIR_SENSE;
       break;
     }
   }
