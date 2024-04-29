@@ -30,6 +30,8 @@
 // State machine variable
 volatile uint8_t state = 0;
 volatile uint8_t data_incoming = 0;
+volatile uint8_t is_buzz_on = 0;
+volatile uint8_t isCodeCorrect = 0;
 
 // Find out what is the system state.
 void getSystemState(char *data);
@@ -64,11 +66,25 @@ const int LCD_D7 = PD7;
 // Buzzer
 const int BUZZER = PB1;
 
+void enableExternalInterrupt() {
+  // External interrupt Control Register for when Master tries to transmit data
+  // to slave. UNO Doc. 70-72 table 13-1 and 2
+  EICRA |= (1 << ISC01);
+  EIMSK |= (1 << INT0);
+}
+
+void disableExternalInterrupt() {
+  EICRA = 0;
+  EIMSK = 0;
+}
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 
 // Interrupt routine for I2C transfer
-ISR(INT0_vect) { data_incoming = 1; }
+ISR(INT0_vect) {
+  disableExternalInterrupt();
+  data_incoming = 1;
+}
 
 int main(void) {
   // // LCD PINS
@@ -88,10 +104,7 @@ int main(void) {
   stdout = &mystdout;
 
   sei();
-  // External interrupt Control Register for when Master tries to transmit data
-  // to slave. UNO Doc. 70-72 table 13-1 and 2
-  EICRA |= (1 << ISC01);
-  EIMSK |= (1 << INT0);
+  enableExternalInterrupt();
 
   // Init LCD display
   lcd_init(LCD_DISP_ON);
@@ -101,11 +114,6 @@ int main(void) {
   // Test print to putty
   printf("Hello There!\n");
 
-  singASong();
-  //   TIMER1_Init_Mode_9();
-  //   TIMER1_SetPrescaler(PS_64);
-  //
-
   // Setup TWI communication with Master
   I2C_InitSlaveReceiver(SLAVE_ADDRESS);
 
@@ -114,43 +122,17 @@ int main(void) {
       I2C_Receive(recv);
       printf("Data incoming...\n");
       data_incoming = 0;
+      enableExternalInterrupt();
       lcd_clrscr();
-      lcd_puts("Status: ");
-      lcd_gotoxy(0, 1);
-      lcd_puts(recv);
+      getSystemState(recv);
+      if (is_buzz_on == 1) {
+        singASong();
+      }
     }
-
-    switch (state) {
-    case PIR_SENSE:
-      lcd_clrscr();
-      lcd_puts(recv);
-      // printf("PIR detecting...\n");
-      break;
-
-    case ALARM_ON:
-      lcd_puts("ALARM!!!");
-      singASong();
-      printf("ALARM!!!...\n");
-
-      state = WAIT_CORRECT_KEY;
-      break;
-
-    case ALARM_OFF:
-      lcd_clrscr();
-      lcd_puts("Alarm off");
-      state = IDLE;
-      break;
-
-    case WAIT_CORRECT_KEY:
-      printf("Correct key...\n");
-      break;
-
-    case IDLE:
-      lcd_puts("Idling at 16MHz...");
-      break;
-    }
-    getSystemState(recv);
   }
+  lcd_puts("Status: ");
+  lcd_gotoxy(0, 1);
+  lcd_puts(recv);
 
   return 0;
 }
@@ -162,22 +144,18 @@ int main(void) {
  * @returns void
  */
 void getSystemState(char *data) {
-  if (strcomp(data, "ALARM ON")) {
-    printf("ALARM set ON...\n");
-    state = ALARM_ON;
+  if (data[0] == '0') {
+    is_buzz_on = 0;
 
-  } else if (strcomp(data, "ALARM OFF")) {
-    printf("ALARM set OFF...\n");
-    state = ALARM_OFF;
+  } else if (data[0] == '1') {
+    is_buzz_on = 1;
 
-  } else if (strcomp(data, "CORRECT")) {
-    printf("Correct code given...\n");
-    state = ALARM_OFF;
+  } else if (data[0] == '2') {
+    isCodeCorrect = 0;
+
+  } else if (data[0] == '3') {
+    isCodeCorrect = 1;
   }
-
-  printf("PIR is sensing...\n");
-
-  state = PIR_SENSE;
 }
 
 int8_t strcomp(char *a, char *b) {

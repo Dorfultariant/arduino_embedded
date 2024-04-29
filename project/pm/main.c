@@ -15,25 +15,23 @@
  *
  * 0 PIR Sense
  * 1 TIMER ON
- * 2 ALARM ON
- * 3 KEY_INSERTION
- * 4 PIR TIMER ALARM OFF
+ * 2 KEY_INSERTION
+ * 3 PIR TIMER ALARM OFF
  */
 
 #define PIR_SENSE 0
 #define TIMER_ON 1
-#define ALARM_ON 2
-#define KEY_INSERTION 3
-#define PIR_TIMER_ALARM_OFF 4
+#define KEY_INSERTION 2
+#define PIR_TIMER_ALARM_OFF 3
 
 // Countdown in seconds
 #define ALARM_TIMER 10
 
 #include <avr/interrupt.h>
-// #include <avr/io.h>
+#include <avr/io.h>
 #include <stdio.h>
-// #include <stdlib.h>
-// #include <util/delay.h>
+#include <stdlib.h>
+#include <util/delay.h>
 
 #include "keypad.h"
 #include "timer3.h"
@@ -69,13 +67,13 @@ volatile uint16_t second_counter = 0;
  */
 ISR(TIMER3_COMPA_vect) {
   TCNT3 = 0;
+  second_counter++;
   if (ALARM_TIMER <= second_counter) {
-    // state = ALARM_ON;
+    PORTH |= (1 << ALARM_LED);
+    TIMER3_Clear();
     TWI_Init();
     TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
-    printf("SOUND THE ALARM\n");
   }
-  second_counter++;
 }
 
 int main(void) {
@@ -123,15 +121,7 @@ int main(void) {
       // Setting the timer 3 to interrupt every second
       TIMER3_SetIntervalSecond();
 
-      printf("%d ", second_counter);
       // Wait for correct user input.
-      state = KEY_INSERTION;
-      break;
-
-    case ALARM_ON:
-      PORTH |= (1 << ALARM_LED);
-
-      // Waiting for correct key.
       state = KEY_INSERTION;
       break;
 
@@ -157,19 +147,18 @@ int main(void) {
         TWI_Transmit(SLAVE_ADDRESS, "ALARM OFF");
 
         // Move to Idle
+        printf("Goin idle at 16Mhz...\n");
         state = PIR_TIMER_ALARM_OFF;
       }
       break;
 
     case PIR_TIMER_ALARM_OFF: // Idle state
-      printf("Idling at 16Mhz...\n");
       // Waiting for system rearming.
-      if (PING % (1 << REARM_BTN)) {
-        printf("Re arm High\n");
+      if (PING & (1 << REARM_BTN)) {
         state = PIR_SENSE;
         isCodeValid = 0;
+        second_counter = 0;
       }
-      // state = PIR_SENSE;
       break;
     }
   }
