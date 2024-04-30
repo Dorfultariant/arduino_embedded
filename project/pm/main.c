@@ -50,6 +50,7 @@ volatile int8_t state = 0;
  TWI communication
  */
 void I2C_Init();
+
 void I2C_Transmit(uint8_t address, char *data);
 
 /*
@@ -74,7 +75,7 @@ ISR(TIMER3_COMPA_vect) {
     PORTH |= (1 << ALARM_LED);
     TIMER3_Clear();
     I2C_Init();
-    I2C_Transmit(SLAVE_ADDRESS, "ALARM ON");
+    I2C_Transmit(SLAVE_ADDRESS, "ALARM ON\0");
   }
 }
 
@@ -113,6 +114,8 @@ int main(void) {
       if (PINE & (1 << PIR_SIGNAL)) {
         state = TIMER_ON;
         printf("Timer started\n");
+        I2C_Init();
+        I2C_Transmit(SLAVE_ADDRESS, "Some1 at Door\0");
       }
       break;
 
@@ -146,7 +149,7 @@ int main(void) {
 
         // Transmit information to Slave
         I2C_Init();
-        I2C_Transmit(SLAVE_ADDRESS, "ALARM OFF");
+        I2C_Transmit(SLAVE_ADDRESS, "ALARM OFF\0");
 
         // Move to Idle
         printf("Goin idle at 16Mhz...\n");
@@ -309,7 +312,6 @@ void read_keypad_code(char *dest, uint8_t code_len) {
     dest[i] = c;
     i++;
   } while (1);
-  printf("Your code: %s \n", dest);
 }
 
 /*
