@@ -83,6 +83,7 @@ ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 // Interrupt routine for I2C transfer
 ISR(INT0_vect) {
   disableExternalInterrupt();
+  _delay_ms(1);
   data_incoming = 1;
 }
 
@@ -116,23 +117,21 @@ int main(void) {
 
   // Setup TWI communication with Master
   I2C_InitSlaveReceiver(SLAVE_ADDRESS);
+  // lcd_clrscr();
 
   while (1) {
-    if (data_incoming) {
-      I2C_Receive(recv);
-      printf("Data incoming...\n");
-      data_incoming = 0;
-      enableExternalInterrupt();
-      lcd_clrscr();
-      getSystemState(recv);
-      if (is_buzz_on == 1) {
-        singASong();
-      }
-    }
+    I2C_Receive(recv);
+
+    data_incoming = 0;
+    enableExternalInterrupt();
+    lcd_clrscr();
+    lcd_puts(recv);
+    _delay_ms(10);
+    // getSystemState(recv);
+    //  if (is_buzz_on == 1) {
+    //    singASong();
+    //  }
   }
-  lcd_puts("Status: ");
-  lcd_gotoxy(0, 1);
-  lcd_puts(recv);
 
   return 0;
 }
@@ -190,7 +189,6 @@ void I2C_InitSlaveReceiver(uint8_t address) {
  Function to receive data from Master:
  */
 void I2C_Receive(char *received) {
-
   uint8_t twi_stat, twi_idx = 0;
 
   // wait for transmission:
@@ -213,19 +211,35 @@ void I2C_Receive(char *received) {
   // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
   // Condition check of twi_status if previous was response of either slave
   // address or general call and NOT ACK return
-  if ((twi_stat == 0x80) || (twi_stat == 0x90)) {
+  while ((twi_stat == 0x80) || (twi_stat == 0x90)) {
     received[twi_idx] = TWDR;
     twi_idx++;
-  } else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
+
+    if ((received[twi_idx - 1] == '\0') || (twi_idx >= DATA_SIZE)) {
+      break;
+    }
+
+    // Reset the TWEA and TWEN, create ACK
+    TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
+
+    // Wait for TWINT to set
+    while (!(TWCR & (1 << TWINT)))
+      ;
+
+    // Status update
+    twi_stat = (TWSR & 0xF8);
+  }
+
+  // check for NOT ACK or general Call
+  if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
     received[twi_idx] = TWDR;
     twi_idx++;
   } else if ((twi_stat == 0xA0)) { // STOP signal
     TWCR |= (1 << TWINT);
   }
-  if (DATA_SIZE <= twi_idx) {
-    printf("%s", received);
-    twi_idx = 0;
-  }
+
+  // Putty print
+  printf("Received: %s\n", received);
 }
 
 /*

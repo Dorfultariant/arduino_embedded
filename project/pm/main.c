@@ -38,8 +38,10 @@
 #include "uart.h"
 
 const int PIR_SIGNAL = PE3;
-const int ALARM_LED = PH3;
 const int REARM_BTN = PG5;
+const int ALARM_LED = PH3;
+const int I2C_ERROR = PH4;
+const int I2C_OK = PH5;
 
 // State machine state
 volatile int8_t state = 0;
@@ -47,8 +49,8 @@ volatile int8_t state = 0;
 /*
  TWI communication
  */
-void TWI_Init();
-void TWI_Transmit(uint8_t address, char *data);
+void I2C_Init();
+void I2C_Transmit(uint8_t address, char *data);
 
 /*
  Keypad code reading and verification:
@@ -71,8 +73,8 @@ ISR(TIMER3_COMPA_vect) {
   if (ALARM_TIMER <= second_counter) {
     PORTH |= (1 << ALARM_LED);
     TIMER3_Clear();
-    TWI_Init();
-    TWI_Transmit(SLAVE_ADDRESS, "ALARM ON");
+    I2C_Init();
+    I2C_Transmit(SLAVE_ADDRESS, "ALARM ON");
   }
 }
 
@@ -143,8 +145,8 @@ int main(void) {
         PORTH &= ~(1 << ALARM_LED);
 
         // Transmit information to Slave
-        TWI_Init();
-        TWI_Transmit(SLAVE_ADDRESS, "ALARM OFF");
+        I2C_Init();
+        I2C_Transmit(SLAVE_ADDRESS, "ALARM OFF");
 
         // Move to Idle
         printf("Goin idle at 16Mhz...\n");
@@ -172,7 +174,7 @@ int main(void) {
  *
  * @returns void
  */
-void TWI_Init() {
+void I2C_Init() {
   // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
   // 4^(TWSR):
   TWSR = 0x00;         // Prescaler to 1
@@ -187,7 +189,7 @@ void TWI_Init() {
  *
  * @returns void
  */
-void TWI_Transmit(uint8_t address, char *data) {
+void I2C_Transmit(uint8_t address, char *data) {
   uint8_t twi_stat = 0;
 
   // Start transmission:
@@ -211,8 +213,24 @@ void TWI_Transmit(uint8_t address, char *data) {
 
   twi_stat = (TWSR & 0xF8);
 
-  // Send data byte at a time
-  for (uint8_t twi_d_idx = 0; twi_d_idx < DATA_SIZE; twi_d_idx++) {
+  // Check if the connection to Slave is successful (Slave returns ACK)
+  if ((twi_stat != 0x18) && (twi_stat != 0x40)) {
+    // Set error led ON
+    PORTH |= (1 << I2C_ERROR);
+    // Verify that OK led is OFF
+    PORTH &= ~(1 << I2C_OK);
+    return;
+  }
+
+  // Set ok led ON
+  PORTH |= (1 << I2C_OK);
+  // Set error led OFF
+  PORTH &= ~(1 << I2C_ERROR);
+
+  // Send data byte at a time until either 16 bytes has been sent or data array
+  // has reached its end.
+  for (uint8_t twi_d_idx = 0;
+       twi_d_idx < DATA_SIZE && (data[twi_d_idx] != '\0'); twi_d_idx++) {
     TWDR = data[twi_d_idx];
 
     // Reset TWINT to transmit data
@@ -225,8 +243,7 @@ void TWI_Transmit(uint8_t address, char *data) {
     twi_stat = (TWSR & 0xF8);
   }
 
-  // Data sent:
-  printf("%s", data);
+
 
   // STOP transmission
   TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
