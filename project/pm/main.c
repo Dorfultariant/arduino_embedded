@@ -86,7 +86,7 @@ int main(void) {
   char usersCode[CODE_ARRAY_LENGTH] = {'\0'};
 
   // Output demo for alarm buzzer (currently RED LED)
-  DDRH |= (1 << ALARM_LED);
+  DDRH |= (1 << ALARM_LED) | (1 << I2C_ERROR) | (1 << I2C_OK);
 
   // PIR sensor input upon movement (currently BUTTON)
   DDRE &= ~(1 << PIR_SIGNAL);
@@ -242,8 +242,6 @@ void I2C_Transmit(uint8_t address, char *data) {
 
     twi_stat = (TWSR & 0xF8);
   }
-
-
 
   // STOP transmission
   TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);

@@ -94,6 +94,7 @@ int main(void) {
   // OUTPUTS DATA
   DDRD |= (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
 
+  // Buzzer OUTPUT
   DDRB |= (1 << BUZZER);
 
   // Initialize empty recv char array
