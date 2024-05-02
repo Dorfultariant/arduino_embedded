@@ -28,7 +28,7 @@ all: $(TARGET).hex upload clean
 test: $(TARGET).hex clean
 
 # Compilation process
-$(TARGET).hex:$(TARGET).c $(LIBS)
+$(TARGET).hex:$(TARGET).c $(LIBS) notes.h
 	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c $(LIBS)
 	avr-objcopy -O ihex -R .eeprom $(TARGET).elf $(TARGET).hex
 
