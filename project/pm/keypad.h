@@ -50,7 +50,7 @@ Errors and omissions should be reported to codelibraries@exploreembedded.com
 #define M_ROW PORTK            // Higher four bits of PORT are used as ROWs
 #define M_COL PINK             // Lower four bits of PORT are used as COLs
 #define C_RowOutputColInput_U8                                                 \
-  0xf0 // value to configure Rows as Output and Columns as Input
+    0xf0 // value to configure Rows as Output and Columns as Input
 /**************************************************************************************************/
 
 /***************************************************************************************************

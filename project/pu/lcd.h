@@ -75,7 +75,7 @@
  */
 #ifndef LCD_CONTROLLER_KS0073
 #define LCD_CONTROLLER_KS0073                                                  \
-  0 /**< Use 0 for HD44780 controller, 1 for KS0073 controller */
+    0 /**< Use 0 for HD44780 controller, 1 for KS0073 controller */
 #endif
 
 /**
@@ -220,24 +220,24 @@
 #endif
 #ifndef LCD_DELAY_INIT
 #define LCD_DELAY_INIT                                                         \
-  5000 /**< delay in micro seconds after initialization command sent  */
+    5000 /**< delay in micro seconds after initialization command sent  */
 #endif
 #ifndef LCD_DELAY_INIT_REP
 #define LCD_DELAY_INIT_REP                                                     \
-  64 /**< delay in micro seconds after initialization command repeated */
+    64 /**< delay in micro seconds after initialization command repeated */
 #endif
 #ifndef LCD_DELAY_INIT_4BIT
 #define LCD_DELAY_INIT_4BIT                                                    \
-  64 /**< delay in micro seconds after setting 4-bit mode */
+    64 /**< delay in micro seconds after setting 4-bit mode */
 #endif
 #ifndef LCD_DELAY_BUSY_FLAG
 #define LCD_DELAY_BUSY_FLAG                                                    \
-  4 /**< time in micro seconds the address counter is updated after busy flag  \
-       is cleared */
+    4 /**< time in micro seconds the address counter is updated after busy     \
+         flag is cleared */
 #endif
 #ifndef LCD_DELAY_ENABLE_PULSE
 #define LCD_DELAY_ENABLE_PULSE                                                 \
-  1 /**< enable signal pulse width in micro seconds */
+    1 /**< enable signal pulse width in micro seconds */
 #endif
 
 /**
@@ -280,7 +280,7 @@
 #define LCD_DISP_ON_BLINK 0x0D  /* display on, cursor off, blink char     */
 #define LCD_DISP_ON_CURSOR 0x0E /* display on, cursor on                  */
 #define LCD_DISP_ON_CURSOR_BLINK                                               \
-  0x0F /* display on, cursor on, blink char      */
+    0x0F /* display on, cursor on, blink char      */
 
 /* move cursor/shift display */
 #define LCD_MOVE_CURSOR_LEFT 0x10  /* move cursor left  (decrement)          */
@@ -290,13 +290,13 @@
 
 /* function set: set interface data length and number of display lines */
 #define LCD_FUNCTION_4BIT_1LINE                                                \
-  0x20 /* 4-bit interface, single line, 5x7 dots */
+    0x20 /* 4-bit interface, single line, 5x7 dots */
 #define LCD_FUNCTION_4BIT_2LINES                                               \
-  0x28 /* 4-bit interface, dual line,   5x7 dots */
+    0x28 /* 4-bit interface, dual line,   5x7 dots */
 #define LCD_FUNCTION_8BIT_1LINE                                                \
-  0x30 /* 8-bit interface, single line, 5x7 dots */
+    0x30 /* 8-bit interface, single line, 5x7 dots */
 #define LCD_FUNCTION_8BIT_2LINES                                               \
-  0x38 /* 8-bit interface, dual line,   5x7 dots */
+    0x38 /* 8-bit interface, dual line,   5x7 dots */
 
 #define LCD_MODE_DEFAULT ((1 << LCD_ENTRY_MODE) | (1 << LCD_ENTRY_INC))
 
