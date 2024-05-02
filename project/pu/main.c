@@ -64,6 +64,7 @@ const int LCD_D7 = PD7;
 
 // Buzzer pin
 const int BUZZER = PB1;
+const int BUILTIN = PB5;
 
 void enableExternalInterrupt()
 {
@@ -93,7 +94,7 @@ int main(void)
 {
     // // LCD PINS
     // OUTPUTS CONTROL
-    DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN);
+    DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN) | (1 << BUILTIN);
     // OUTPUTS DATA
     DDRD |= (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
 
@@ -128,12 +129,14 @@ int main(void)
 
     while (1) {
         if (data_incoming) {
+            lcd_clrscr();
             I2C_Receive(recv);
             parser(recv, code);
             data_incoming = 0;
         }
         if (state == BUZZ) {
             // Something
+            PORTB ^= (1 << BUILTIN);
         }
     }
 
@@ -219,7 +222,7 @@ void I2C_InitSlaveReceiver(uint8_t address)
 /*
  Function to receive data from Master:
  */
-void I2C_Receive(char *received)
+void I22C_Receive(char *received)
 {
     uint8_t twi_stat, twi_idx = 0;
 
@@ -269,5 +272,50 @@ void I2C_Receive(char *received)
     }
     else if ((twi_stat == 0xA0)) { // STOP signal
         TWCR |= (1 << TWINT);
+    }
+}
+
+/*
+ Function to receive data from Master:
+ */
+void I2C_Receive(char *received)
+{
+
+    uint8_t twi_stat, twi_idx = 0;
+
+    // wait for transmission:
+    while (!(TWCR & (1 << TWINT)))
+        ;
+
+    // Set status
+    twi_stat = (TWSR & 0xF8);
+
+    // Reset the TWEA and TWEN and create ACK
+    TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
+
+    // Waiting for TWINT to set:
+    while (!(TWCR & (1 << TWINT)))
+        ;
+
+    // Set status
+    twi_stat = (TWSR & 0xF8);
+
+    // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
+    // Condition check of twi_status if previous was response of either slave
+    // address or general call and NOT ACK return
+    if ((twi_stat == 0x80) || (twi_stat == 0x90)) {
+        received[twi_idx] = TWDR;
+        twi_idx++;
+    }
+    else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
+        received[twi_idx] = TWDR;
+        twi_idx++;
+    }
+    else if ((twi_stat == 0xA0)) { // STOP signal
+        TWCR |= (1 << TWINT);
+    }
+    if (DATA_SIZE <= twi_idx) {
+        printf("%s", received);
+        twi_idx = 0;
     }
 }
