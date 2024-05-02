@@ -39,22 +39,29 @@ void TIMER1_Init_Mode_9() {
  * @param None
  * @returns Void
  */
-void TIMER1_Init_Mode_4() {
+void TIMER0_Init_Mode_2() {
   // Enables interrupts
   sei();
+  TIMER0_Clear();
+  // Toggle on compare match: UNO 328p doc 104 table 15-2.
+  TCCR0A |= (1 << COM0A0);
 
-  // Clear registers
-  TIMER1_Clear();
+  // UNO doc page 132 table 15-8 CTC, TOP OCRA
+  TCCR0A |= (1 << WGM01);
 
-  // Toggle on compare match: UNO 328p doc 131 table 16-1.
-  TCCR1A |= (1 << COM1A0);
-
-  // UNO doc page 132 table 16-4 CTC, TOP OCR1A
-  TCCR1A |= (1 << WGM12);
+  // prescaler 64
+  TCCR0B |= (1 << CS02) | (1 << CS00);
 
   // Enable output compare A match interrupt
-  TIMSK1 |= (1 << OCIE1A);
-  TCNT1 = 0;
+  TIMSK1 |= (1 << OCIE0A);
+  TCNT0 = 0;
+}
+
+void TIMER0_Clear() {
+  // Clear registers
+  TCCR0A = 0;
+  TIMSK0 = 0;
+  TCNT0 = 0;
 }
 
 uint32_t tone(uint16_t frequency, uint16_t duration) {

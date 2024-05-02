@@ -19,6 +19,10 @@
  */
 void TIMER1_Init_Mode_9();
 
+void TIMER0_Init_Mode_2();
+
+void TIMER0_Clear();
+
 /*
  * Initialize UNO timer 1 to mode 4 which is CTC
  * TOP OCR1A

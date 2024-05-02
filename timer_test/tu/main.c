@@ -32,7 +32,10 @@
 #include "timer1.h"
 #include "uart.h"
 
-const int BUZZER = PB1;
+const int BUZZER = PD6;
+
+const int ALARM_ON = PD2;
+const int ALARM_FF = PD3;
 volatile uint32_t toggle_counter = 0;
 
 void singASong();
@@ -47,23 +50,56 @@ ISR(TIMER1_COMPA_vect) {
   }
 }
 
+ISR(TIMER0_COMPA_vect) { TCNT0 = 0; }
+
+volatile uint8_t isAlarm = 1;
+
+ISR(INT1_vect) { isAlarm = 1; }
+
+ISR(INT0_vect) { isAlarm = 0; }
+
+void alarm();
+
 int main(void) {
 
   USART_Init(MYUBRR);
-  DDRB |= (1 << BUZZER);
+  DDRD |= (1 << BUZZER);
+
+  DDRD &= ~(1 << ALARM_FF) & ~(1 << ALARM_ON);
 
   stdin = &mystdin;
   stdout = &mystdout;
   printf("Hello There!\n");
-  TIMER1_Init_Mode_9();
-  TIMER1_SetPrescaler(PS_64);
+  // TIMER1_Init_Mode_9();
+  // TIMER1_SetPrescaler(PS_64);
 
-  singASong();
+  // singASong();
+
+  // Logic change
+  EICRA |= (1 << ISC10);
+  // Both pins to be used
+  EIMSK |= (1 << INT1) | (1 << INT0);
 
   while (1) {
-    printf("La bomba\n");
+    if (isAlarm) {
+      alarm();
+    }
+    // printf("La bomba\n");
   }
   return 0;
+}
+
+void alarm() {
+  TIMER0_Init_Mode_2();
+  while (1) {
+    OCR0A = 24;
+    _delay_ms(100);
+    OCR0A = 14;
+    _delay_ms(100);
+    if (!isAlarm)
+      TIMER0_Clear();
+    break;
+  }
 }
 
 /*

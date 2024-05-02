@@ -33,9 +33,6 @@ volatile uint8_t data_incoming = 0;
 volatile uint8_t is_buzz_on = 0;
 volatile uint8_t isCodeCorrect = 0;
 
-// Initialize empty recv char array
-volatile char recv[DATA_SIZE] = {'\0'};
-
 // Find out what is the system state.
 void getSystemState(char *data);
 
@@ -87,9 +84,7 @@ ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 ISR(INT0_vect) {
   disableExternalInterrupt();
   _delay_ms(1);
-  I2C_Receive(recv);
-  getSystemState(recv);
-  enableExternalInterrupt();
+  data_incoming = 1;
 }
 
 int main(void) {
@@ -101,6 +96,9 @@ int main(void) {
 
   // Buzzer OUTPUT
   DDRB |= (1 << BUZZER);
+
+  // Initialize empty recv char array
+  char recv[DATA_SIZE] = {'\0'};
 
   // Init debug communication Through USB
   USART_Init(MYUBRR);
@@ -123,6 +121,12 @@ int main(void) {
   // lcd_clrscr();
 
   while (1) {
+    if (data_incoming) {
+      I2C_Receive(recv);
+
+      data_incoming = 0;
+      enableExternalInterrupt();
+    }
 
     lcd_clrscr();
     lcd_puts(recv);
@@ -143,16 +147,16 @@ int main(void) {
  * @returns void
  */
 void getSystemState(char *data) {
-  if (strcomp(data, "ALARM OFF\0")) {
+  if (data[0] == '0') {
     is_buzz_on = 0;
 
-  } else if (strcomp(data, "ALARM ON\0")) {
+  } else if (data[0] == '1') {
     is_buzz_on = 1;
 
-  } else if (strcomp(data, "CODE INCORRECT\0")) {
+  } else if (data[0] == '2') {
     isCodeCorrect = 0;
 
-  } else if (strcomp(data, "CODE CORRECT\0")) {
+  } else if (data[0] == '3') {
     isCodeCorrect = 1;
   }
 }
@@ -263,7 +267,7 @@ void singASong() {
 }
 
 void tone(uint16_t freq_top) {
-  if (!is_buzz_on) {
+  if (!is_buzz_on || data_incoming) {
     return;
   }
   TIMER1_SetTarget(freq_top);

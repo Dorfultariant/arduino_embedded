@@ -23,6 +23,9 @@ AVRDUDE=avrdude -c $(PROGRAMMER) -p $(MCU) -P $(PORT) -b $(BAUD)
 # Target for all: upload
 all: $(TARGET).hex upload clean
 
+# Testing compilation
+test: $(TARGET).hex clean
+
 # Compilation process
 $(TARGET).hex:$(TARGET).c uart.o timer1.o
 	$(CC) $(CFLAGS) -o $(TARGET).elf $(TARGET).c uart.o timer1.o
