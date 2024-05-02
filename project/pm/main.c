@@ -277,6 +277,7 @@ void I22C_Transmit(uint8_t address, const char *data)
 
 void I2C_Transmit(uint8_t address, const char *data)
 {
+    printf("Start transmit\n");
     uint8_t twi_stat = 0;
 
     // Start transmission:
@@ -285,6 +286,7 @@ void I2C_Transmit(uint8_t address, const char *data)
     while (!(TWCR & (1 << TWINT)))
         ;
 
+    printf("Afetr first WHile\n");
     // Read status from TWI status register
 
     twi_stat = (TWSR & 0xF8);
@@ -300,7 +302,7 @@ void I2C_Transmit(uint8_t address, const char *data)
         ;
 
     twi_stat = (TWSR & 0xF8);
-
+    printf("Before For\n");
     // Send data byte at a time
     for (uint8_t twi_d_idx = 0;
          (twi_d_idx < DATA_SIZE) && (data[twi_d_idx] != '\0'); twi_d_idx++) {
@@ -318,6 +320,7 @@ void I2C_Transmit(uint8_t address, const char *data)
 
     // STOP transmission
     TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+    printf("End transmit\n");
 }
 
 /*
@@ -339,7 +342,7 @@ void read_keypad_code(char *dest, uint8_t code_len)
     int i = 0;
     char c = 0;
     // These characters are not accepted as a code:
-    char notAccepted[] = "ABCD#*";
+    char notAccepted[] = "BC#*";
 
     // Get users input until the user presses [A]ccept on the keypad and user
     // has given long enough password.
@@ -356,27 +359,33 @@ void read_keypad_code(char *dest, uint8_t code_len)
             continue;
         }
 
-        // Condition to check password length and break from loop
-        if (code_len <= i) {
-            if (c == 'A') {
-                break;
-            }
-            // We want to get the last 4 digits given by the user:
-            for (int j = 0; j < code_len - 1; j++) {
-                dest[j] = dest[j + 1];
-            }
-            dest[code_len - 1] = c;
-            continue;
-        }
-
-        // Check for unacceptable chars such as B, C, #, *
+        // Check for unacceptable chars defined in notAccepted array
         for (char *ptr = notAccepted; *ptr != '\0'; ptr++) {
             if (c == *ptr) {
                 c = 0;
                 break;
             }
         }
-        if (0 == c) {
+
+        // If unacceptable char is found, move on.
+        if (c = 0) {
+            continue;
+        }
+
+        // Condition to check password length and break from loop
+        if (c == 'A') {
+            if (code_len - 1 <= i) {
+                break;
+            }
+            continue;
+        }
+
+        if ((code_len - 1) <= i) {
+            // We want to get the last 4 digits given by the user:
+            for (int j = 0; j < code_len - 1; j++) {
+                dest[j] = dest[j + 1];
+            }
+            dest[code_len - 1] = c;
             continue;
         }
 

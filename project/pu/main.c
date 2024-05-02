@@ -70,7 +70,7 @@ void enableExternalInterrupt()
 {
     // External interrupt Control Register for when Master tries to transmit
     // data to slave. UNO Doc. 70-72 table 13-1 and 2
-    EICRA |= (1 << ISC01);
+    EICRA |= (1 << ISC00);
     EIMSK |= (1 << INT0);
 }
 
@@ -86,7 +86,7 @@ ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 // Interrupt routine for I2C transfer
 ISR(INT0_vect)
 {
-    _delay_ms(1);
+    printf("Data incoming\n");
     data_incoming = 1;
 }
 
@@ -128,16 +128,23 @@ int main(void)
     // lcd_clrscr();
 
     while (1) {
-        if (data_incoming) {
-            lcd_clrscr();
-            I2C_Receive(recv);
-            parser(recv, code);
-            data_incoming = 0;
-        }
         if (state == BUZZ) {
             // Something
             PORTB ^= (1 << BUILTIN);
         }
+        I2C_Receive(recv);
+        lcd_clrscr();
+        parser(recv, code);
+
+        if (len(code) > 0) {
+            // lcd_clrscr();
+            lcd_puts("Code:");
+            lcd_gotoxy(0, 1);
+            lcd_puts(code);
+            printf("Code %s\n", code);
+        }
+        // data_incoming = 0;
+        // lcd_puts(recv);
     }
 
     return 0;
@@ -180,16 +187,12 @@ void parser(char *data, char *code)
             lcd_puts("TIME IS UP!");
         }
         // If the code is given, it will
-        else if (CODE_ARRAY_LENGTH > idx) {
+        else if ((CODE_ARRAY_LENGTH - 1) > idx) {
             code[idx] = data[idx];
         }
         idx++;
     }
-
-    if (len(code) > 0) {
-        lcd_gotoxy(0, 1);
-        lcd_puts(code);
-    }
+    code[CODE_ARRAY_LENGTH - 1] = '\0';
 }
 
 uint16_t len(char *data)
@@ -222,7 +225,7 @@ void I2C_InitSlaveReceiver(uint8_t address)
 /*
  Function to receive data from Master:
  */
-void I22C_Receive(char *received)
+void I2C_Receive(char *received)
 {
     uint8_t twi_stat, twi_idx = 0;
 
@@ -278,9 +281,8 @@ void I22C_Receive(char *received)
 /*
  Function to receive data from Master:
  */
-void I2C_Receive(char *received)
+void I22C_Receive(char *received)
 {
-
     uint8_t twi_stat, twi_idx = 0;
 
     // wait for transmission:
@@ -314,6 +316,7 @@ void I2C_Receive(char *received)
     else if ((twi_stat == 0xA0)) { // STOP signal
         TWCR |= (1 << TWINT);
     }
+
     if (DATA_SIZE <= twi_idx) {
         printf("%s", received);
         twi_idx = 0;
