@@ -58,6 +58,7 @@ volatile int8_t state = 0;
  */
 void I2C_Init();
 
+void TWI_Tr(uint16_t address, char *data);
 void I2C_Transmit(uint8_t address, const char *data);
 
 /*
@@ -172,7 +173,7 @@ int main(void)
                 I2C_Init();
 
                 // Transmit incorrect symbol
-                I2C_Transmit(SLAVE_ADDRESS, &WRONG_CODE);
+                I2C_Transmit(SLAVE_ADDRESS, "P\0");
 
                 // Transmit incorrect symbol
                 I2C_Transmit(SLAVE_ADDRESS, usersCode);
@@ -215,7 +216,7 @@ void I2C_Init()
  *
  * @returns void
  */
-void I2C_Transmit(uint8_t address, const char *data)
+void I22C_Transmit(uint8_t address, const char *data)
 {
     uint8_t twi_stat = 0;
 
@@ -258,6 +259,51 @@ void I2C_Transmit(uint8_t address, const char *data)
     // array has reached its end.
     for (uint8_t twi_d_idx = 0;
          twi_d_idx < DATA_SIZE && (data[twi_d_idx] != '\0'); twi_d_idx++) {
+        TWDR = data[twi_d_idx];
+
+        // Reset TWINT to transmit data
+        TWCR = (1 << TWINT) | (1 << TWEN);
+
+        // Wait for TWINT to set
+        while (!(TWCR & (1 << TWINT)))
+            ;
+
+        twi_stat = (TWSR & 0xF8);
+    }
+
+    // STOP transmission
+    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+}
+
+void I2C_Transmit(uint8_t address, const char *data)
+{
+    uint8_t twi_stat = 0;
+
+    // Start transmission:
+    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+
+    while (!(TWCR & (1 << TWINT)))
+        ;
+
+    // Read status from TWI status register
+
+    twi_stat = (TWSR & 0xF8);
+
+    // Slave address
+    TWDR = address;
+
+    // Clear TWINT to start transmit to slave + write
+    TWCR = (1 << TWINT) | (1 << TWEN);
+
+    // Wait TWINT to set
+    while (!(TWCR & (1 << TWINT)))
+        ;
+
+    twi_stat = (TWSR & 0xF8);
+
+    // Send data byte at a time
+    for (uint8_t twi_d_idx = 0;
+         (twi_d_idx < DATA_SIZE) && (data[twi_d_idx] != '\0'); twi_d_idx++) {
         TWDR = data[twi_d_idx];
 
         // Reset TWINT to transmit data
