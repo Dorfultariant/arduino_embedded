@@ -9,25 +9,26 @@
  * @param None
  * @returns void
  */
-void TIMER3_Init_CTC() {
-  // Enables interrupts
-  sei();
+void TIMER3_Init_CTC()
+{
+    // Enables interrupts
+    sei();
 
-  // Clear registers
-  TIMER3_Clear();
+    // Clear registers
+    TIMER3_Clear();
 
-  // Toggle on compare match: 2560 doc 155 table 17-3.
-  TCCR3A |= (1 << COM3A0);
+    // Toggle on compare match: 2560 doc 155 table 17-3.
+    TCCR3A |= (1 << COM3A0);
 
-  // Refer to the documentation at 128 table 16-8 with Waveform generation
-  // modes. Here it is set to CTC
-  TCCR3B |= (1 << WGM32);
+    // Refer to the documentation at 128 table 16-8 with Waveform generation
+    // modes. Here it is set to CTC
+    TCCR3B |= (1 << WGM32);
 
-  // Enable output compare A match interrupt
-  TIMSK3 |= (1 << OCIE3A);
+    // Enable output compare A match interrupt
+    TIMSK3 |= (1 << OCIE3A);
 
-  // Set default Prescaler and TOP :
-  TIMER3_SetIntervalSecond();
+    // Set default Prescaler and TOP :
+    TIMER3_SetIntervalSecond();
 }
 
 /*
@@ -36,11 +37,12 @@ void TIMER3_Init_CTC() {
  * @param None
  * @returns void
  */
-void TIMER3_Clear() {
-  TCCR3A = 0;
-  TCCR3B = 0;
-  TCNT3 = 0;
-  TIMSK3 = 0;
+void TIMER3_Clear()
+{
+    TCCR3A = 0;
+    TCCR3B = 0;
+    TCNT3 = 0;
+    TIMSK3 = 0;
 }
 
 /*
@@ -49,31 +51,32 @@ void TIMER3_Clear() {
  * @param uint16_t prescaler value to be used for timer
  * @returns void
  */
-void TIMER3_SetPrescaler(const uint16_t prescaler) {
-  switch (prescaler) {
-  case 1:
-    // Prescaler value 1
-    TCCR3B |= 0b00000001;
-    break;
-  case 8:
-    // Prescaler value 8
-    TCCR3B |= 0b00000010;
-    break;
-  case 64:
-    // Prescaler value 64
-    TCCR3B |= 0b00000011;
-    break;
-  case 256:
-    // Prescaler value 256
-    TCCR3B |= 0b00000100;
-    break;
-  case 1024:
-    // Prescaler value 1024
-    TCCR3B |= 0b00000101;
-    break;
-  default:
-    break;
-  }
+void TIMER3_SetPrescaler(const uint16_t prescaler)
+{
+    switch (prescaler) {
+    case 1:
+        // Prescaler value 1
+        TCCR3B |= 0b00000001;
+        break;
+    case 8:
+        // Prescaler value 8
+        TCCR3B |= 0b00000010;
+        break;
+    case 64:
+        // Prescaler value 64
+        TCCR3B |= 0b00000011;
+        break;
+    case 256:
+        // Prescaler value 256
+        TCCR3B |= 0b00000100;
+        break;
+    case 1024:
+        // Prescaler value 1024
+        TCCR3B |= 0b00000101;
+        break;
+    default:
+        break;
+    }
 }
 
 /*
@@ -90,9 +93,10 @@ void TIMER3_SetTarget(uint16_t value) { OCR3A = value; }
  * @param None
  * @returns void
  */
-void TIMER3_SetIntervalSecond() {
-  TIMER3_SetPrescaler(PS_1024);
-  TIMER3_SetTarget(SECOND_1024);
+void TIMER3_SetIntervalSecond()
+{
+    TIMER3_SetPrescaler(PS_1024);
+    TIMER3_SetTarget(SECOND_1024);
 }
 
 /*
