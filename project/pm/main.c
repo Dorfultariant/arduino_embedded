@@ -67,6 +67,8 @@ void I2C_Transmit(uint8_t address, const char *data);
 volatile uint8_t isCodeValid = 0;
 void read_keypad_code(char *dest, uint8_t code_len);
 int verify_code(char *to_be_checked, char *correct);
+// Check if c in char array
+int8_t cInArr(char c, char *arr);
 
 /*
  Timer 3 counter for 10 second countdown from PIR sense.
@@ -362,6 +364,9 @@ void read_keypad_code(char *dest, uint8_t code_len)
         // Condition to check password length and break from loop
         if (code_len <= i) {
             if (c == 'A') {
+                // Check for unacceptable chars
+                if (cInArr(c, notAccepted))
+                    continue;
                 break;
             }
             // We want to get the last 4 digits given by the user:
@@ -373,14 +378,7 @@ void read_keypad_code(char *dest, uint8_t code_len)
         }
 
         // Check for unacceptable chars such as B, C, #, *
-        for (char *ptr = notAccepted; *ptr != '\0'; ptr++) {
-            if (c == *ptr) {
-                printf("Discard %c \n", c);
-                c = 0;
-                break;
-            }
-        }
-        if (0 == c) {
+        if (cInArr(c, notAccepted)) {
             continue;
         }
 
@@ -388,6 +386,24 @@ void read_keypad_code(char *dest, uint8_t code_len)
         dest[i] = c;
         i++;
     } while (1);
+}
+
+/*
+ * Function to find if character is in a char array
+ *
+ * @param char c character to find
+ * @param char *arr :ay of characters to find from
+ *
+ * @returns 0 no match, 1 match
+ */
+int8_t cInArr(char c, char *arr)
+{
+    for (char *ptr = arr; *ptr != '\0'; ptr++) {
+        if (c == *ptr) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /*
