@@ -40,11 +40,14 @@
 #include "uart.h"
 
 // Bytes to cause an alarm on UNO
-const char WRONG_CODE = {'P'};
-const char TIMES_UP = {'T'};
+const char WRONG_CODE[] = "P\0";
+const char TIMES_UP[] = "T\0";
 
 // Timer is started signal
-const char MOVEMENT = {'M'};
+const char MOVEMENT[] = "M\0";
+
+// Reset
+const char RESET[] = "R\0";
 
 const int PIR_SIGNAL = PE3;
 const int REARM_BTN = PG5;
@@ -130,7 +133,7 @@ int main(void)
                 state = TIMER_ON;
                 printf("Timer started\n");
                 I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, &MOVEMENT);
+                I2C_Transmit(SLAVE_ADDRESS, MOVEMENT);
             }
             break;
 
@@ -170,7 +173,7 @@ int main(void)
                 I2C_Init();
 
                 // Transmit incorrect symbol
-                I2C_Transmit(SLAVE_ADDRESS, &WRONG_CODE);
+                I2C_Transmit(SLAVE_ADDRESS, WRONG_CODE);
 
                 // Transmit incorrect symbol
                 I2C_Transmit(SLAVE_ADDRESS, usersCode);

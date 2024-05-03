@@ -15,10 +15,7 @@
 
 #define MOVEMENT 0
 #define BUZZ 1
-
-#define NOTE_64_Cs3 906
-#define NOTE_64_C5 856
-#define NOTE_64_200 625
+#define REARM 2
 
 #include <avr/interrupt.h>
 // #include <avr/io.h>
@@ -66,6 +63,8 @@ const int LCD_D7 = PD7;
 const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
+void rearm();
+
 void enableExternalInterrupt()
 {
     // External interrupt Control Register for when Master tries to transmit
@@ -102,7 +101,7 @@ int main(void)
     DDRB |= (1 << BUZZER);
 
     // Initialize empty recv char array
-    char recv[DATA_SIZE] = {'\0'};
+    char recv[DATA_SIZE + 1] = {'\0'};
 
     // Initialize empty received code
     char code[CODE_ARRAY_LENGTH] = {'\0'};
@@ -134,21 +133,34 @@ int main(void)
             // do buzzer while waiting
             // TODO: buzzer functionality
             PORTB |= (1 << BUILTIN);
+            _delay_ms(200);
+            PORTB &= ~(1 << BUILTIN);
+            _delay_ms(200);
         }
 
         printf("Finally out of a while\n");
         I2C_Receive(recv);
         lcd_clrscr();
         parser(recv, code);
+        if (state == REARM) {
+            // Reset all arrays
+            for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                recv[idx] = '\0';
+                if (CODE_ARRAY_LENGTH > idx) {
+                    code[idx] = '\0';
+                }
+            }
+        }
+        printf("Recv: %s \n", recv);
 
         if (len(code) > 0) {
             // lcd_clrscr();
+            printf("Koodi: %s\n", code);
+            lcd_clrscr();
             lcd_puts("Code:");
             lcd_gotoxy(0, 1);
             lcd_puts(code);
         }
-        // data_incoming = 0;
-        // lcd_puts(recv);
     }
 
     return 0;
@@ -191,6 +203,9 @@ void parser(char *data, char *code)
             lcd_gotoxy(0, 1);
             lcd_puts("TIME IS UP!");
         }
+        else if (data[idx] == 'R') {
+            state = REARM;
+        }
         // If the code is given, it will
         else if ((CODE_ARRAY_LENGTH - 1) > idx) {
             code[idx] = data[idx];
@@ -232,7 +247,18 @@ void I2C_InitSlaveReceiver(uint8_t address)
  */
 void I2C_Receive(char *received)
 {
-    uint8_t twi_stat, twi_idx = 0;
+    uint8_t twi_stat = 0;
+    uint8_t twi_idx = 0;
+
+    // Make sure the received array is full of nulls
+    for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+        received[idx] = '\0';
+    }
+
+    // Waiting for TWINT to set:
+    while (!(TWCR & (1 << TWINT))) {
+        ;
+    }
 
     // Set status
     twi_stat = (TWSR & 0xF8);
