@@ -218,7 +218,7 @@ void I2C_Init()
  *
  * @returns void
  */
-void I22C_Transmit(uint8_t address, const char *data)
+void I2C_Transmit(uint8_t address, const char *data)
 {
     uint8_t twi_stat = 0;
 
@@ -277,54 +277,6 @@ void I22C_Transmit(uint8_t address, const char *data)
     TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
 }
 
-void I2C_Transmit(uint8_t address, const char *data)
-{
-    printf("Start transmit\n");
-    uint8_t twi_stat = 0;
-
-    // Start transmission:
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-
-    while (!(TWCR & (1 << TWINT)))
-        ;
-
-    printf("Afetr first WHile\n");
-    // Read status from TWI status register
-
-    twi_stat = (TWSR & 0xF8);
-
-    // Slave address
-    TWDR = address;
-
-    // Clear TWINT to start transmit to slave + write
-    TWCR = (1 << TWINT) | (1 << TWEN);
-
-    // Wait TWINT to set
-    while (!(TWCR & (1 << TWINT)))
-        ;
-
-    twi_stat = (TWSR & 0xF8);
-    printf("Before For\n");
-    // Send data byte at a time
-    for (uint8_t twi_d_idx = 0;
-         (twi_d_idx < DATA_SIZE) && (data[twi_d_idx] != '\0'); twi_d_idx++) {
-        TWDR = data[twi_d_idx];
-
-        // Reset TWINT to transmit data
-        TWCR = (1 << TWINT) | (1 << TWEN);
-
-        // Wait for TWINT to set
-        while (!(TWCR & (1 << TWINT)))
-            ;
-
-        twi_stat = (TWSR & 0xF8);
-    }
-
-    // STOP transmission
-    TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-    printf("End transmit\n");
-}
-
 /*
  * Stores users given key code from the keypad to the destination array to be
  * verified. When user has given code_len amount of digits (only last ones are
@@ -338,47 +290,48 @@ void I2C_Transmit(uint8_t address, const char *data)
  */
 void read_keypad_code(char *dest, uint8_t code_len)
 {
-    // DEBUG PRINT TO PUTTY
-    printf("Give %d numbers:\n", code_len);
+
+    uint8_t max_idx = code_len - 1;
 
     int i = 0;
     char c = 0;
     // These characters are not accepted as a code:
-    char notAccepted[] = "ABCD#*";
+    char notAccepted[] = {"BC#*"};
 
     // Get users input until the user presses [A]ccept on the keypad and user
     // has given long enough password.
     do {
         c = KEYPAD_GetKey();
+        if (cInArr(c, notAccepted)) {
+            continue;
+        }
 
         // If user pressed [D]elete, then last char is removed if it exists
         if ('D' == c) {
             // Check if there is previous char and only then remove the previous
             // char.
             if (0 < i) {
-                dest[--i] = '\0';
+                dest[i - 1] = '\0';
+                i--;
             }
             continue;
         }
 
         // Condition to check password length and break from loop
-        if (code_len <= i) {
+        if (max_idx <= i) {
             if (c == 'A') {
-                // Check for unacceptable chars
-                if (cInArr(c, notAccepted))
-                    continue;
                 break;
             }
+
             // We want to get the last 4 digits given by the user:
-            for (int j = 0; j < code_len - 1; j++) {
+            for (int j = 0; j < max_idx; j++) {
                 dest[j] = dest[j + 1];
             }
-            dest[code_len - 1] = c;
+            dest[max_idx] = c;
             continue;
         }
 
-        // Check for unacceptable chars such as B, C, #, *
-        if (cInArr(c, notAccepted)) {
+        if (c == 'A') {
             continue;
         }
 
@@ -400,6 +353,7 @@ int8_t cInArr(char c, char *arr)
 {
     for (char *ptr = arr; *ptr != '\0'; ptr++) {
         if (c == *ptr) {
+            printf("Discard %c\n", c);
             return 1;
         }
     }
