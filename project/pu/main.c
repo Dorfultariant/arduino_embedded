@@ -93,7 +93,9 @@ int main(void)
         printf("Finally out of a while\n");
         I2C_Receive(recv);
         lcd_clrscr();
+
         parser(recv);
+
 
         printf("Recv: %s \n", recv);
     }
@@ -153,6 +155,7 @@ void parser(char *data)
         lcd_puts("Armed");
 
         TIMER1_Clear();
+
     }
 }
 
