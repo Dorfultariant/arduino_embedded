@@ -1,0 +1,14 @@
+\select@language {english}
+\penalty \@secpenalty \relax \vskip 1.0em plus\p@ \relax \@tempdima 1.5em\relax \begingroup \parindent \z@ \rightskip 1.55em\parfillskip -1.55em\unhbox \voidb@x \bfseries \advance \leftskip \@tempdima \hskip -\leftskip Abstract\penalty \@M \hfil \penalty \@M \hbox to1.55em{\hss }\par \endgroup 
+\penalty \@secpenalty \relax \vskip 1.0em plus\p@ \relax \@tempdima 1.5em\relax \begingroup \parindent \z@ \rightskip 1.55em\parfillskip -1.55em\unhbox \voidb@x \bfseries \advance \leftskip \@tempdima \hskip -\leftskip Acknowledgments\penalty \@M \hfil \penalty \@M \hbox to1.55em{\hss }\par \endgroup 
+\penalty \@secpenalty \relax \vskip 1.0em plus\p@ \relax \@tempdima 1.5em\relax \begingroup \parindent \z@ \rightskip 1.55em\parfillskip -1.55em\unhbox \voidb@x \bfseries \advance \leftskip \@tempdima \hskip -\leftskip Contents\penalty \@M \hfil \penalty \@M \hbox to1.55em{\hss }\par \endgroup 
+\contentsline {section}{List of publications}{9}
+\contentsline {section}{Nomenclature}{11}
+\contentsline {section}{\numberline {1}Introduction}{12}
+\contentsline {subsection}{\numberline {1.1}Granular material}{12}
+\contentsline {subsection}{\numberline {1.2}Motivation and objectives of the study}{14}
+\contentsline {subsection}{\numberline {1.3}A short historical review}{14}
+\contentsline {subsection}{\numberline {1.4}Review of former studies}{15}
+\contentsline {subsubsection}{\numberline {1.4.1}Experimental studies}{15}
+\contentsline {subsubsection}{\numberline {1.4.2}Computer simulations}{17}
+\contentsline {section}{References}{19}

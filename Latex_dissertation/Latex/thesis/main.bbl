@@ -1,0 +1,197 @@
+\begin{thebibliography}{40}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{url: }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+\providecommand{\eprint}[2][]{{#2}}
+
+\bibitem[{Aharonov and Sparks(2002)}]{Aha02}
+Aharonov, E. and Sparks, D. (2002). Shear profiles and localization in
+  simulations of granular materials. \emph{Physical Review E}, 65, p. 051302.
+
+\bibitem[{Bagnold(1941)}]{Bag41}
+Bagnold, R.A. (1941). \emph{The physics of blown sand and desert dunes}. New
+  York: William Morrow \& Co.
+
+\bibitem[{Bagnold(1954)}]{Bag54}
+Bagnold, R.A. (1954). Experiments on a gravity-free dispersion of large solid
+  spheres in a {N}ewtonian fluids under shear. \emph{Proceedings of the Royal
+  Society of London. Series A, Mathematical and Physical Sciences}, 225(1160),
+  pp. 49--63.
+
+\bibitem[{Bagnold(1956)}]{Bag56}
+Bagnold, R.A. (1956). The flow of cohesionless grains in fluids.
+  \emph{Philosophical Transactions of the Royal Society of London. Series A,
+  Mathematical and Physical Sciences}, 249(964), pp. 235--297.
+
+\bibitem[{Baran and Kondic(2005)}]{Bar05}
+Baran, O. and Kondic, L. (2005). Velocity profiles, stresses, and Bagnold
+  scaling of sheared granular system in zero gravity. \emph{Physics of Fluids},
+  17(7), p. 073304.
+
+\bibitem[{Campbell(1985)}]{Cam84}
+Campbell, C.S. (1985). Computer simulation of granular shear flows.
+  \emph{Journal of Fluid Mechanics}, 151, pp. 167--188.
+
+\bibitem[{Coulomb(1773)}]{Cou73}
+Coulomb, C.A. (1773). Essay on the rules of {M}aximis and {M}inimis applied to
+  some problems of equilibrium related to architecture. \emph{Memoir de
+  Mathématique et de Physique}, 70, p. 343.
+
+\bibitem[{Cundall and Strack(1979)}]{Cun79}
+Cundall, P.A. and Strack, O. (1979). A discrete numerical model for granular
+  assemblies. \emph{Géotechnique}, 29(1), pp. 47--65.
+
+\bibitem[{Dalton and Corcoran(2001)}]{Dal01}
+Dalton, F. and Corcoran, D. (2001). Self-organized criticality in a sheared
+  granular stick-slip system. \emph{Physical Review E}, 63(6), pp.
+  061312--061315.
+
+\bibitem[{Dalton et~al.(2005)Dalton, Petri, and Pontuale}]{Dal05}
+Dalton, F., Petri, A., and Pontuale, G. (2005). Stress fluctuations and the
+  solid/fluid transition in a sheared granular bed. In: García-Rojo, R.,
+  Herrmann, H., and McNamara, S., eds, \emph{Powders and Grains}, pp. 353--355.
+   Stuttgart, Germany, Jun. 18-22, 2005.
+
+\bibitem[{Daniels and Behringer(2005)}]{Dan05}
+Daniels, K.E. and Behringer, R.P. (2005). Hysteresis and competition between
+  disorder and crystallization in sheared and vibrated granular flow.
+  \emph{Physical Review Letters}, 94(16), p. 168001.
+
+\bibitem[{{De Gennes}(1991)}]{De91}
+{De Gennes}, P. (1991). \emph{Soft Matter}.
+
+\bibitem[{Duran(2000)}]{Dur00}
+Duran, J. (2000). \emph{Sands, {P}owders, and {G}rains: {a}n introduction to
+  the physics of granular materials}. New York: Springer-Verlag, Inc. ISBN
+  0-387-98656-1.
+
+\bibitem[{Edwards and Grinev(2003)}]{Edw03}
+Edwards, S.F. and Grinev, D.V. (2003). Statistical mechanics of granular
+  materials: stress propagation and distribution of contact forces.
+  \emph{Granular Matter}, 4(4), pp. 147--153.
+
+\bibitem[{Edwards(2005)}]{Edw05}
+Edwards, S. (2005). The full canonical ensemble of a granular system.
+  \emph{Physica A}, 353, pp. 114--118.
+
+\bibitem[{Erikson et~al.(2002)Erikson, Mueggenburg, Jaeger, and Nagel}]{Eri02}
+Erikson, J.M., Mueggenburg, N.W., Jaeger, H.M., and Nagel, S.R. (2002). Force
+  distributions in three-dimensional compressible granular packs.
+  \emph{Physical Review E}, 66, p. 040301.
+
+\bibitem[{Goldenberg and Goldhirsch(2004)}]{Gol04}
+Goldenberg, C. and Goldhirsch, I. (2004). Small and large scale granular
+  statics. \emph{Granular Matter}, 6(2-3), pp. 87--96.
+
+\bibitem[{Hanes and Inman(1985)}]{Han85}
+Hanes, D.M. and Inman, D.L. (1985). Observations of rapidly flowing
+  granular-fluid materials. \emph{Journal of Fluid Mechanics}, 150, pp.
+  357--380.
+
+\bibitem[{Howell et~al.(1999{\natexlab{a}})Howell, Behringer, and
+  Veje}]{How99b}
+Howell, D., Behringer, R.P., and Veje, C. (1999{\natexlab{a}}). Stress
+  fluctuations in a 2{D} granular {C}ouette experiment: {A} continuous
+  transition. \emph{Physical Review Letters}, 82(26), pp. 5241--5244.
+
+\bibitem[{Howell et~al.(1999{\natexlab{b}})Howell, Behringer, and
+  Veje}]{How99a}
+Howell, D.W., Behringer, R.P., and Veje, C.T. (1999{\natexlab{b}}).
+  Fluctuations in granular media. \emph{Chaos}, 9(3), pp. 559--572.
+
+\bibitem[{Hsiau and Yang(2004)}]{Hsi04}
+Hsiau, S.S. and Yang, W.L. (2004). Transport property measurements in shear
+  granular flows. \emph{Chemical Engineering Science}, 60, pp. 187--199.
+
+\bibitem[{Jalali et~al.(2003)Jalali, Li, Ritvanen, and Sarkomaa}]{Jal03}
+Jalali, P., Li, M., Ritvanen, J., and Sarkomaa, P. (2003). Intermittency of
+  energy in rapid granular shear flows. \emph{Chaos}, 13, pp. 434--443.
+
+\bibitem[{Jalali(2000)}]{Jal00}
+Jalali, P. (2000). \emph{Mass transfer and particle interactions in granular
+  systems and suspension flows}. Ph.D. thesis. Lappeenranta University of
+  Technology, Espoo, Finland.
+
+\bibitem[{Latzel et~al.(2000)Latzel, Luding, and Herrmann}]{Lat00}
+Latzel, M., Luding, S., and Herrmann, H.J. (2000). Macroscopic material
+  properties from quasi-static, microscopic simulations of a two-dimensional
+  shear-cell. \emph{Granular Matter}, 2(3), pp. 123--135.
+
+\bibitem[{Liu et~al.(1995)}]{Liu95}
+Liu, C.H., et~al. (1995). Force fluctuations in bead packs. \emph{Science},
+  269, pp. 513--515.
+
+\bibitem[{Losert and Kwon(2001)}]{Los01}
+Losert, W. and Kwon, G. (2001). Transient and steady-state dynamics of granular
+  shear flows. \emph{Advances in Complex systems}, 4(4), pp. 369--377.
+
+\bibitem[{Louge(1994)}]{Lou94}
+Louge, M.Y. (1994). Computer-Simulations Of Rapid Granular Flows Of Spheres
+  Interacting With A Flat, Frictional Boundary. \emph{Physics of Fluids}, 6(7),
+  pp. 2253--2269.
+
+\bibitem[{Lun and Bent(1994)}]{Lun94}
+Lun, C.K.K. and Bent, A.A. (1994). Numerical-Simulation Of Inelastic Frictional
+  Spheres In Simple Shear-Flow. \emph{Journal of Fluid Mechanics}, 258, pp.
+  335--353.
+
+\bibitem[{Miller et~al.(1996)Miller, O'Hern, and Behringer}]{Mil96}
+Miller, B., O'Hern, C., and Behringer, R.B. (1996). Stress Fluctuations for
+  Continuously Sheared Granular Materials. \emph{Physical Review Letters},
+  77(15), pp. 3110--3113.
+
+\bibitem[{Mueth(2003)}]{Mue03}
+Mueth, D.M. (2003). Measurements of particle dynamics in slow, dense granular
+  {C}ouette flow. \emph{Physical Review E}, 67, p. 011304.
+
+\bibitem[{Mueth et~al.(2000)}]{Mue00}
+Mueth, D.M., et~al. (2000). Signatures of granular microstructure in dense
+  shear flows. \emph{Nature}, 406, pp. 385--389.
+
+\bibitem[{Peters et~al.(2005)Peters, Muthuswamy, Wibowo, and
+  Tordesillas}]{Pet05}
+Peters, J.F., Muthuswamy, M., Wibowo, J., and Tordesillas, A. (2005).
+  Characterization of force chains in granular material. \emph{Physical Review
+  E}, 72(4), p. 041307.
+
+\bibitem[{Reynolds(1885)}]{Rey85}
+Reynolds, O. (1885). On the dilatancy of media composed of rigid particles in
+  contact. \emph{Philosophical Magazine}, 20, pp. 469--481.
+
+\bibitem[{Savage and Dai(1993)}]{Sav93}
+Savage, S.B. and Dai, R. (1993). Studies Of Granular Shear Flowswall Slip
+  Velocities, Layering And Self-Diffusion. \emph{Mechanics of Materials},
+  16(1-2), pp. 225--238.
+
+\bibitem[{Savage and Sayed(1984)}]{Sav84}
+Savage, S.B. and Sayed, M. (1984). Stresses developed by dry cohesionless
+  granular material sheared in an annular shear cell. \emph{Journal of Fluid
+  Mechanics}, 142, pp. 391--430.
+
+\bibitem[{Schöllmann(1999)}]{Sch99}
+Schöllmann, S. (1999). Simulation of a two-dimansional shear cell.
+  \emph{Physical Review E}, 59, pp. 889--899.
+
+\bibitem[{Tardos et~al.(2002)Tardos, McNamara, and Talu}]{Tar02}
+Tardos, G.I., McNamara, S., and Talu, I. (2002). Slow and intermediate flow of
+  a frictional bulk powder in a {C}ouette geometry. \emph{Powder Technology},
+  131, pp. 23--39.
+
+\bibitem[{Tsai(2004)}]{Tsa04}
+Tsai, J.C. (2004). \emph{Evolution and internal dynamics of quasi-statically
+  sheared granular flows}. Ph.D. thesis. University of Pennsylvania.
+
+\bibitem[{Tsai et~al.(2003)Tsai, Voth, and Collub}]{Tsa03}
+Tsai, J.C., Voth, G.A., and Collub, J.P. (2003). Internal granular dynamics,
+  shear induced crystallization, and compaction steps. \emph{Physical Review
+  Letters}, 91(6), p. 064301.
+
+\bibitem[{Utter and Behringer(2004)}]{Utt04}
+Utter, B. and Behringer, R.P. (2004). Transients in sheared granular matter.
+  \emph{European Physical Journal E}, 14(4), pp. 373--380.
+
+\end{thebibliography}
