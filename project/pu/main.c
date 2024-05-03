@@ -93,9 +93,7 @@ int main(void)
         printf("Finally out of a while\n");
         I2C_Receive(recv);
         lcd_clrscr();
-
         parser(recv);
-
 
         printf("Recv: %s \n", recv);
     }
@@ -138,6 +136,8 @@ void parser(char *data)
 
         // Initialize timer 1 PWM mode
         TIMER1_Init_Mode_9();
+        TIMER1_SetPrescaler(PS_8);
+        TIMER1_SetTarget(NOTE_C3);
     }
     else if (data[idx] == 'T') {
         lcd_clrscr();
@@ -147,6 +147,8 @@ void parser(char *data)
 
         // Initialize timer 1 PWM mode
         TIMER1_Init_Mode_9();
+        TIMER1_SetPrescaler(PS_8);
+        TIMER1_SetTarget(NOTE_C5);
     }
     else if (data[idx] == 'R') {
         lcd_clrscr();
@@ -155,7 +157,6 @@ void parser(char *data)
         lcd_puts("Armed");
 
         TIMER1_Clear();
-
     }
 }
 
@@ -203,6 +204,7 @@ void I2C_InitSlaveReceiver(uint8_t address)
 
     // Slave receiver mode setup.
     TWCR |= (1 << TWEA) | (1 << TWEN);
+
     // Explicitly set to 0I2C_Receive
     TWCR &= ~(1 << TWSTA) & ~(1 << TWSTO);
     // Eqv: TWCR = 0b01000100;
