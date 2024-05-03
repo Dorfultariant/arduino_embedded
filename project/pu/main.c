@@ -16,7 +16,6 @@
 #define MYUBRR (((F_CPU / 16) / BAUD) - 1)
 
 #define DATA_SIZE 16
-#define CODE_ARRAY_LENGTH 5
 
 // LCD Display PINS NOTE remember to change from lcd.h also
 const int LCD_RS = PB2;
