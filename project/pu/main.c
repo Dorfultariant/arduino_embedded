@@ -124,7 +124,6 @@ int main(void)
 
     // Setup TWI communication with Master
     I2C_InitSlaveReceiver(SLAVE_ADDRESS);
-    // lcd_clrscr();
 
     for (;;) {
         printf("Going to take a while\n");
@@ -142,6 +141,7 @@ int main(void)
         I2C_Receive(recv);
         lcd_clrscr();
         parser(recv, code);
+
         if (state == REARM) {
             // Reset all arrays
             for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
@@ -178,6 +178,10 @@ void parser(char *data, char *code)
 {
     uint8_t idx = 0;
 
+    for (uint8_t i = 0; i < CODE_ARRAY_LENGTH - 1; i++) {
+        code[i] = '\0';
+    }
+
     while (data[idx] != '\0') {
         if (data[idx] == 'M') {
             state = MOVEMENT;
@@ -188,7 +192,7 @@ void parser(char *data, char *code)
             lcd_gotoxy(0, 1);
             lcd_puts("Movement!");
         }
-        else if (data[idx] == 'O') {
+        else if (data[idx] == 'P') {
             state = BUZZ;
             lcd_clrscr();
             lcd_puts("Wrong Password");
@@ -207,7 +211,7 @@ void parser(char *data, char *code)
             state = REARM;
         }
         // If the code is given, it will
-        else if ((CODE_ARRAY_LENGTH - 1) > idx) {
+        if ((CODE_ARRAY_LENGTH - 1) > idx) {
             code[idx] = data[idx];
         }
         idx++;
