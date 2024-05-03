@@ -51,6 +51,7 @@ const char MOVEMENT[] = "M";
 const char REARM[] = "R";
 
 /*
+ * Data to be sent
  * [ #KOODI ]
  * [ # ]
  */
@@ -244,7 +245,7 @@ void I2C_Transmit(uint8_t address, const char *data)
     while (!(TWCR & (1 << TWINT)))
         ;
 
-    // Read status from TWI status register
+    // Read status from TWI status register, 0xF8
     twi_stat = (TWSR & 0xF8);
 
     // Slave address

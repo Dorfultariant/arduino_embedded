@@ -56,6 +56,8 @@ const int LCD_EN = PB4;
 
 const int LCD_D4 = PD4;
 const int LCD_D5 = PD5;
+0;
+
 const int LCD_D6 = PD6;
 const int LCD_D7 = PD7;
 
