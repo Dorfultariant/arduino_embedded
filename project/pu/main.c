@@ -7,47 +7,15 @@
 #define DATA_SIZE 16
 #define CODE_ARRAY_LENGTH 5
 
-#define PIR_SENSE 0
-#define ALARM_ON 1
-#define ALARM_OFF 2
-#define WAIT_CORRECT_KEY 3
-#define IDLE 4
-
-#define MOVEMENT 0
-#define BUZZ 1
-#define REARM 2
-
 #include <avr/interrupt.h>
-// #include <avr/io.h>
 #include <stdint.h>
 #include <stdio.h>
-// #include <stdlib.h>
 #include <util/delay.h>
 
 #include "lcd.h"
 #include "notes.h"
 #include "timer1.h"
 #include "uart.h"
-
-// State machine variable
-volatile uint8_t state = 0;
-volatile uint8_t data_incoming = 0;
-
-// Parser to check system condition
-void parser(char *data, char *code);
-
-/*
- * I2C / TWI communication initialization with Master.
- */
-void I2C_InitSlaveReceiver(uint8_t address);
-
-/*
- * I2C / TWI receive from Master.
- */
-void I2C_Receive(char *dest);
-
-// Array length calculator
-uint16_t len(char *data);
 
 // LCD Display PINS WARNING remember to change from lcd.h also
 const int LCD_RS = PB2;
@@ -63,108 +31,24 @@ const int LCD_D7 = PD7;
 const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
+// Parser to check system condition
+void parser(char *data, char *code);
+
+// I2C / TWI communication initialization with Master.
+void I2C_InitSlaveReceiver(uint8_t address);
+
+// I2C / TWI receive from Master.
+void I2C_Receive(char *dest);
+
+// Array length calculator
+uint16_t len(char *data);
+
+// Rearm system
 void rearm();
-
-void enableExternalInterrupt()
-{
-    // External interrupt Control Register for when Master tries to transmit
-    // data to slave. UNO Doc. 70-72 table 13-1 and 2
-    EICRA |= (1 << ISC00);
-    EIMSK |= (1 << INT0);
-}
-
-void disableExternalInterrupt()
-{
-    EICRA = 0;
-    EIMSK = 0;
-}
 
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 
-// Interrupt routine for I2C transfer
-ISR(INT0_vect)
-{
-    // printf("Data incoming\n");
-    data_incoming = 1;
-}
-
-int main(void)
-{
-    // // LCD PINS
-    // OUTPUTS CONTROL
-    DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN) | (1 << BUILTIN);
-    // OUTPUTS DATA
-    DDRD |= (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
-
-    // Buzzer OUTPUT
-    DDRB |= (1 << BUZZER);
-
-    // Initialize empty recv char array
-    char recv[DATA_SIZE + 1] = {'\0'};
-
-    // Initialize empty received code
-    char code[CODE_ARRAY_LENGTH] = {'\0'};
-
-    // Init debug communication Through USB
-    USART_Init(MYUBRR);
-    stdin = &mystdin;
-    stdout = &mystdout;
-
-    sei();
-    enableExternalInterrupt();
-
-    // Init LCD display
-    lcd_init(LCD_DISP_ON);
-    lcd_clrscr();
-
-    lcd_puts("Welcome!");
-    // Test print to putty
-    printf("Hello There!\n");
-
-    // Setup TWI communication with Master
-    I2C_InitSlaveReceiver(SLAVE_ADDRESS);
-    // lcd_clrscr();
-
-    for (;;) {
-        printf("Going to take a while\n");
-        // wait for transmission:
-        while (!(TWCR & (1 << TWINT))) {
-            // do buzzer while waiting
-            // TODO: buzzer functionality
-            PORTB |= (1 << BUILTIN);
-            _delay_ms(200);
-            PORTB &= ~(1 << BUILTIN);
-            _delay_ms(200);
-        }
-
-        printf("Finally out of a while\n");
-        I2C_Receive(recv);
-        lcd_clrscr();
-        parser(recv, code);
-        if (state == REARM) {
-            // Reset all arrays
-            for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
-                recv[idx] = '\0';
-                if (CODE_ARRAY_LENGTH > idx) {
-                    code[idx] = '\0';
-                }
-            }
-        }
-        printf("Recv: %s \n", recv);
-
-        if (len(code) > 0) {
-            // lcd_clrscr();
-            printf("Koodi: %s\n", code);
-            lcd_clrscr();
-            lcd_puts("Code:");
-            lcd_gotoxy(0, 1);
-            lcd_puts(code);
-        }
-    }
-
-    return 0;
-}
 
 /*
  * Check the system status based on received data
@@ -174,47 +58,64 @@ int main(void)
  *
  * @returns void
  */
-void parser(char *data, char *code)
+void parser(char *data)
 {
     uint8_t idx = 0;
 
-    while (data[idx] != '\0') {
-        if (data[idx] == 'M') {
-            state = MOVEMENT;
-            printf("Going to take a while\n");
+    if (data[idx] == 'M') {
+        printf("Going to take a while\n");
 
-            lcd_clrscr();
-            lcd_puts("Status:");
-            lcd_gotoxy(0, 1);
-            lcd_puts("Movement!");
-        }
-        else if (data[idx] == 'O') {
-            state = BUZZ;
-            lcd_clrscr();
-            lcd_puts("Wrong Password");
-
-            // Initialize timer 1 PWM mode
-            TIMER1_Init_Mode_9();
-        }
-        else if (data[idx] == 'T') {
-            state = BUZZ;
-            lcd_clrscr();
-            lcd_puts("Status:");
-            lcd_gotoxy(0, 1);
-            lcd_puts("TIME IS UP!");
-        }
-        else if (data[idx] == 'R') {
-            state = REARM;
-        }
-        // If the code is given, it will
-        else if ((CODE_ARRAY_LENGTH - 1) > idx) {
-            code[idx] = data[idx];
-        }
-        idx++;
+        lcd_clrscr();
+        lcd_puts("Status:");
+        lcd_gotoxy(0, 1);
+        lcd_puts("Movement!");
     }
+    else if (data[idx] == 'C') {
+        lcd_clrscr();
+        lcd_puts("Correct Password");
+        lcd_gotoxy(0, 1);
+        lcd_puts(&data[1]);
+
+        TIMER1_Clear();
+    }
+    else if (data[idx] == 'W') {
+        lcd_clrscr();
+        lcd_puts("Wrong Password":);
+        lcd_gotoxy(0, 1);
+        lcd_puts(&data[1]);
+
+        // Initialize timer 1 PWM mode
+        TIMER1_Init_Mode_9();
+    }
+    else if (data[idx] == 'T') {
+        lcd_clrscr();
+        lcd_puts("Status:");
+        lcd_gotoxy(0, 1);
+        lcd_puts("TIME IS UP!");
+
+        // Initialize timer 1 PWM mode
+        TIMER1_Init_Mode_9();
+    }
+    else if (data[idx] == 'R') {
+        lcd_clrscr();
+        lcd_puts("Status:");
+        lcd_gotoxy(0, 1);
+        lcd_puts("Armed");
+
+        TIMER1_Clear();
+    }
+
+    // If the code is given, it will
+    else if ((CODE_ARRAY_LENGTH - 1) > idx) {
+        code[idx] = data[idx];
+    }
+
     code[CODE_ARRAY_LENGTH - 1] = '\0';
 }
 
+/*
+ * Function to get the lentgh of a string.
+ */
 uint16_t len(char *data)
 {
     uint16_t count = 0;
@@ -249,6 +150,11 @@ void I2C_Receive(char *received)
 {
     uint8_t twi_stat = 0;
     uint8_t twi_idx = 0;
+
+    // Waiting for TWINT to set:
+    while (!(TWCR & (1 << TWINT))) {
+        ;
+    }
 
     // Make sure the received array is full of nulls
     for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
@@ -310,3 +216,6 @@ void I2C_Receive(char *received)
 }
 
 /* EOF */
+
+
+
