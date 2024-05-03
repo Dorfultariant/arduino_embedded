@@ -1,4 +1,5 @@
 
+#include <stdint.h>
 #define F_CPU 16000000UL
 #define DATA_SIZE 16
 #define BAUD 9600
@@ -31,6 +32,7 @@
 #include <avr/io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <util/delay.h>
 
 #include "keypad.h"
@@ -38,11 +40,14 @@
 #include "uart.h"
 
 // Bytes to cause an alarm on UNO
-const char WRONG_CODE = {'P'};
-const char TIMES_UP = {'T'};
+const char WRONG_CODE[] = "P\0";
+const char TIMES_UP[] = "T\0";
 
 // Timer is started signal
-const char MOVEMENT = {'M'};
+const char MOVEMENT[] = "M\0";
+
+// Reset
+const char RESET[] = "R\0";
 
 const int PIR_SIGNAL = PE3;
 const int REARM_BTN = PG5;
@@ -65,7 +70,7 @@ void I2C_Transmit(uint8_t address, const char *data);
  Keypad code reading and verification:
  */
 volatile uint8_t isCodeValid = 0;
-void read_keypad_code(char *dest, uint8_t code_len);
+int8_t read_keypad_code(char *dest, uint8_t code_len);
 int verify_code(char *to_be_checked, char *correct);
 // Check if c in char array
 int8_t cInArr(char c, char *arr);
@@ -85,6 +90,7 @@ ISR(TIMER3_COMPA_vect)
     if (ALARM_TIMER <= second_counter) {
         PORTH |= (1 << ALARM_LED);
         TIMER3_Clear();
+        second_counter = 0;
         I2C_Init();
         I2C_Transmit(SLAVE_ADDRESS, &TIMES_UP);
     }
@@ -127,7 +133,7 @@ int main(void)
                 state = TIMER_ON;
                 printf("Timer started\n");
                 I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, &MOVEMENT);
+                I2C_Transmit(SLAVE_ADDRESS, MOVEMENT);
             }
             break;
 
@@ -149,21 +155,13 @@ int main(void)
                 // Clear timer and turn it "off"
                 TIMER3_Clear();
 
-                // Store time taken until system dearm
-                uint16_t timeTakenUntilCorrectKey = second_counter;
-
-                // Reset counter
-                second_counter = 0;
-
                 // Turn off alarm
                 PORTH &= ~(1 << ALARM_LED);
 
                 // Transmit information to Slave
                 I2C_Init();
 
-                // Ensure that the code array ends.
-                usersCode[CODE_ARRAY_LENGTH - 1] = '\0';
-
+                // Send the code to UNO
                 I2C_Transmit(SLAVE_ADDRESS, usersCode);
 
                 // Move to Idle
@@ -175,7 +173,7 @@ int main(void)
                 I2C_Init();
 
                 // Transmit incorrect symbol
-                I2C_Transmit(SLAVE_ADDRESS, "P\0");
+                I2C_Transmit(SLAVE_ADDRESS, WRONG_CODE);
 
                 // Transmit incorrect symbol
                 I2C_Transmit(SLAVE_ADDRESS, usersCode);
@@ -286,77 +284,45 @@ void I2C_Transmit(uint8_t address, const char *data)
  * @param char *dest        Destination array
  * @param uint8_t code_len  Destination array length
  *
- * @returns Void
+ * @returns 0 for success
  */
-void read_keypad_code(char *dest, uint8_t code_len)
+int8_t read_keypad_code(char *dest, uint8_t code_len)
 {
+    int index = 0;
+    char chr = 0;
 
-    uint8_t max_idx = code_len - 1;
+    // Ensure that we are working with empty array:
+    for (uint8_t idx = 0; idx < code_len; idx++) {
+        dest[idx] = '\0';
+    }
 
-    int i = 0;
-    char c = 0;
-    // These characters are not accepted as a code:
-    char notAccepted[] = {"BC#*"};
+    // Get users input until the user presses [A]ccept on the keypad and
+    // user has given long enough password.
+    while (1) {
+        chr = KEYPAD_GetKey();
 
-    // Get users input until the user presses [A]ccept on the keypad and user
-    // has given long enough password.
-    do {
-        c = KEYPAD_GetKey();
-        if (cInArr(c, notAccepted)) {
-            continue;
-        }
-
-        // If user pressed [D]elete, then last char is removed if it exists
-        if ('D' == c) {
-            // Check if there is previous char and only then remove the previous
-            // char.
-            if (0 < i) {
-                dest[i - 1] = '\0';
-                i--;
+        // Check for digit in range 0 - 9
+        if ((chr >= '0') && (chr <= '9')) {
+            // We want to store the last code_len amount of digits
+            if (index >= code_len) {
+                memmove(dest, dest + 1, code_len - 1);
+                index--;
             }
-            continue;
+            dest[index++] = chr;
         }
-
-        // Condition to check password length and break from loop
-        if (max_idx <= i) {
-            if (c == 'A') {
-                break;
-            }
-
-            // We want to get the last 4 digits given by the user:
-            for (int j = 0; j < max_idx; j++) {
-                dest[j] = dest[j + 1];
-            }
-            dest[max_idx] = c;
-            continue;
+        // Allow the [D]eletion of previous char if it exists
+        else if (chr == 'D' && index > 0) {
+            index--;
         }
+        // End point to exit function if enough digits given and [A]ccept
+        else if ((chr == 'A') && (index == code_len)) {
+            break;
 
-        if (c == 'A') {
-            continue;
-        }
-
-        // If all the checks pass, we can accept the given number
-        dest[i] = c;
-        i++;
-    } while (1);
-}
-
-/*
- * Function to find if character is in a char array
- *
- * @param char c character to find
- * @param char *arr :ay of characters to find from
- *
- * @returns 0 no match, 1 match
- */
-int8_t cInArr(char c, char *arr)
-{
-    for (char *ptr = arr; *ptr != '\0'; ptr++) {
-        if (c == *ptr) {
-            printf("Discard %c\n", c);
-            return 1;
         }
     }
+
+    // Make sure that the dest ends.
+    dest[code_len] = '\0';
     return 0;
 }
 
