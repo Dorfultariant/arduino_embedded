@@ -32,7 +32,7 @@ const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
 // Parser to check system condition
-void parser(char *data, char *code);
+void parser(char *data);
 
 // I2C / TWI communication initialization with Master.
 void I2C_InitSlaveReceiver(uint8_t address);
@@ -44,7 +44,7 @@ void I2C_Receive(char *dest);
 uint16_t len(char *data);
 
 // Rearm system
-void rearm();
+void rearm(char *recv);
 
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
@@ -79,7 +79,7 @@ int main(void)
 
     for (;;) {
         printf("Going to take a while\n");
-        
+
         // wait for transmission:
         while (!(TWCR & (1 << TWINT))) {
             // do buzzer while waiting
@@ -96,7 +96,6 @@ int main(void)
         parser(recv);
 
         printf("Recv: %s \n", recv);
-        printf("Koodi: %s\n", code);
     }
     return 0;
 }
@@ -131,7 +130,7 @@ void parser(char *data)
     }
     else if (data[idx] == 'W') {
         lcd_clrscr();
-        lcd_puts("Wrong Password":);
+        lcd_puts("Wrong Password:");
         lcd_gotoxy(0, 1);
         lcd_puts(&data[1]);
 
@@ -160,7 +159,8 @@ void parser(char *data)
 /*
  * Resets recv, lcd and buzzer
  */
-void rearm(char *recv) {
+void rearm(char *recv)
+{
     // reset recv
     for (uint8_t idx = 0; idx < DATA_SIZE + 1; idx++) {
         recv[idx] = '\0';
@@ -170,7 +170,7 @@ void rearm(char *recv) {
     lcd_init(LCD_DISP_ON);
     lcd_clrscr();
     lcd_puts("Welcome!");
-    
+
     // clear buzzer
     TIMER1_Clear();
 }
