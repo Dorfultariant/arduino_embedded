@@ -6,7 +6,6 @@
 #define MYUBRR F_CPU / 16 / BAUD - 1
 
 #define CODE_ARRAY_LENGTH 5
-#define PS_1024 1024
 #define SECOND F_CPU / (2 * PS_1024 * 0.5)
 
 #define SLAVE_ADDRESS 170
@@ -126,9 +125,6 @@ int main(void)
     // Keypad initialization for getting users input from keypad.
     KEYPAD_Init();
 
-    // Test print for program start.
-    printf("Hello There!\n");
-
     // Main logic loop, state machine.
     while (1) {
         switch (state) {
@@ -136,7 +132,6 @@ int main(void)
             // If PIR senses movement start timer
             if (PINE & (1 << PIR_SIGNAL)) {
                 state = TIMER_ON;
-                printf("Timer started\n");
                 I2C_Init();
                 I2C_Transmit(SLAVE_ADDRESS, MOVEMENT);
             }
@@ -182,6 +177,8 @@ int main(void)
                 for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
                     transfer_data[idx] = '\0';
                 }
+                PORTH |= (1 << ALARM_LED);
+
                 strcat(transfer_data, WRONG_CODE);
                 strcat(transfer_data, usersCode);
                 printf("%s\n", transfer_data);
@@ -196,6 +193,7 @@ int main(void)
                 isCodeValid = 0;
                 second_counter = 0;
 
+                // Clear transfer_data
                 for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
                     transfer_data[idx] = '\0';
                 }
