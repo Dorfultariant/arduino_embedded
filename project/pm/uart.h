@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 // Initialize the USART with registers
-void USART_Init(unsigned int ubrr);
+void usart_init(unsigned int ubrr);
 
 // Insert data into uart communication link:
 static int uart_putchar(char c, FILE *stream);

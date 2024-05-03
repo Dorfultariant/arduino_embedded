@@ -19,7 +19,7 @@
  * @param None
  * @returns void
  */
-void TIMER3_Init_CTC();
+void timer3_init_ctc();
 
 /*
  * Clear Mega timer 3 registers
@@ -27,7 +27,7 @@ void TIMER3_Init_CTC();
  * @param None
  * @returns void
  */
-void TIMER3_Clear();
+void timer3_clear();
 
 /*
  * Set target TOP value of Mega Timer 3
@@ -35,7 +35,7 @@ void TIMER3_Clear();
  * @param uint16_t TOP value to be set to OCR3A register.
  * @returns void
  */
-void TIMER3_SetTarget(uint16_t value);
+void timer3_set_target(uint16_t value);
 
 /*
  * Set Mega Timer 3 prescaler value 1; 8; 64; 256; 1024
@@ -43,7 +43,7 @@ void TIMER3_SetTarget(uint16_t value);
  * @param uint16_t prescaler value to be used for timer
  * @returns void
  */
-void TIMER3_SetPrescaler(uint16_t prescaler);
+void timer3_set_prescaler(uint16_t prescaler);
 
 /*
  * Function to set the CTC timer 3 interval to every second.
@@ -51,6 +51,6 @@ void TIMER3_SetPrescaler(uint16_t prescaler);
  * @param None
  * @returns void
  */
-void TIMER3_SetIntervalSecond();
+void timer3_set_interval_second();
 
 #endif // _TIMER3_H

@@ -9,13 +9,13 @@
  * @param None
  * @returns void
  */
-void TIMER3_Init_CTC()
+void timer3_init_ctc()
 {
     // Enables interrupts
     sei();
 
     // Clear registers
-    TIMER3_Clear();
+    timer3_clear();
 
     // Toggle on compare match: 2560 doc 155 table 17-3.
     TCCR3A |= (1 << COM3A0);
@@ -28,7 +28,7 @@ void TIMER3_Init_CTC()
     TIMSK3 |= (1 << OCIE3A);
 
     // Set default Prescaler and TOP :
-    TIMER3_SetIntervalSecond();
+    timer3_set_interval_second();
 }
 
 /*
@@ -37,7 +37,7 @@ void TIMER3_Init_CTC()
  * @param None
  * @returns void
  */
-void TIMER3_Clear()
+void timer3_clear()
 {
     TCCR3A = 0;
     TCCR3B = 0;
@@ -51,7 +51,7 @@ void TIMER3_Clear()
  * @param uint16_t prescaler value to be used for timer
  * @returns void
  */
-void TIMER3_SetPrescaler(const uint16_t prescaler)
+void timer3_set_prescaler(const uint16_t prescaler)
 {
     switch (prescaler) {
     case 1:
@@ -85,7 +85,7 @@ void TIMER3_SetPrescaler(const uint16_t prescaler)
  * @param uint16_t TOP value to be set to OCR3A register.
  * @returns void
  */
-void TIMER3_SetTarget(uint16_t value) { OCR3A = value; }
+void timer3_set_target(uint16_t value) { OCR3A = value; }
 
 /*
  * Function to set the CTC timer 3 interval to every second.
@@ -93,10 +93,10 @@ void TIMER3_SetTarget(uint16_t value) { OCR3A = value; }
  * @param None
  * @returns void
  */
-void TIMER3_SetIntervalSecond()
+void timer3_set_interval_second()
 {
-    TIMER3_SetPrescaler(PS_1024);
-    TIMER3_SetTarget(SECOND_1024);
+    timer3_set_prescaler(PS_1024);
+    timer3_set_target(SECOND_1024);
 }
 
 /*

@@ -17,7 +17,7 @@
  * @param None
  * @returns Void
  */
-void TIMER1_Init_Mode_9();
+void timer1_init_mode_9();
 
 /*
  * Clear UNO timer 1 registers
@@ -25,7 +25,7 @@ void TIMER1_Init_Mode_9();
  * @param None
  * @returns void
  */
-void TIMER1_Clear();
+void timer1_clear();
 
 /*
  * Set target TOP value of UNO Timer 1
@@ -33,7 +33,7 @@ void TIMER1_Clear();
  * @param uint16_t value of target TOP.
  * @returns Void
  */
-void TIMER1_SetTarget(uint16_t value);
+void timer1_set_target(uint16_t value);
 
 /*
  * Set UNO Timer 1 prescaler value 1; 8; 64; 256; 1024
@@ -41,6 +41,6 @@ void TIMER1_SetTarget(uint16_t value);
  * @param None
  * @returns Void
  */
-void TIMER1_SetPrescaler(uint16_t prescaler);
+void timer1_set_prescaler(uint16_t prescaler);
 
 #endif // _TIMER1_H
