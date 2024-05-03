@@ -288,7 +288,6 @@ void I2C_Transmit(uint8_t address, const char *data)
  */
 int8_t read_keypad_code(char *dest, uint8_t code_len)
 {
-
     int index = 0;
     char chr = 0;
 
@@ -318,6 +317,7 @@ int8_t read_keypad_code(char *dest, uint8_t code_len)
         // End point to exit function if enough digits given and [A]ccept
         else if ((chr == 'A') && (index == code_len)) {
             break;
+
         }
     }
 
