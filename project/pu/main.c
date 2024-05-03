@@ -17,7 +17,7 @@
 #include "timer1.h"
 #include "uart.h"
 
-// LCD Display PINS WARNING remember to change from lcd.h also
+// LCD Display PINS NOTE remember to change from lcd.h also
 const int LCD_RS = PB2;
 const int LCD_RW = PB3;
 const int LCD_EN = PB4;
@@ -40,9 +40,6 @@ void I2C_InitSlaveReceiver(uint8_t address);
 // I2C / TWI receive from Master.
 void I2C_Receive(char *dest);
 
-// Array length calculator
-uint16_t len(char *data);
-
 // Rearm system
 void rearm(char *recv);
 
@@ -62,7 +59,7 @@ int main(void)
     DDRB |= (1 << BUZZER);
 
     // Initialize empty recv char array
-    char recv[DATA_SIZE + 1] = {'\0'};
+    char recv[DATA_SIZE] = {'\0'};
 
     // Init debug communication Through USB
     USART_Init(MYUBRR);
@@ -78,24 +75,21 @@ int main(void)
     I2C_InitSlaveReceiver(SLAVE_ADDRESS);
 
     for (;;) {
-        printf("Going to take a while\n");
-
         // wait for transmission:
         while (!(TWCR & (1 << TWINT))) {
-            // do buzzer while waiting
-            // TODO: buzzer functionality
+            // Built in led is blinked to indicate that board is waiting for
+            // transmission.
             PORTB |= (1 << BUILTIN);
             _delay_ms(200);
             PORTB &= ~(1 << BUILTIN);
             _delay_ms(200);
         }
-
-        printf("Finally out of a while\n");
+        // When transmission is coming, the information will be stored in the
+        // recv array.
         I2C_Receive(recv);
-        lcd_clrscr();
-        parser(recv);
 
-        printf("Recv: %s \n", recv);
+        // The received data is parsed and information is printed to the LCD.
+        parser(recv);
     }
     return 0;
 }
@@ -110,11 +104,14 @@ int main(void)
  */
 void parser(char *data)
 {
+    // First byte of data is checked as it represents the system state.
     uint8_t idx = 0;
 
-    if (data[idx] == 'M') {
-        printf("Going to take a while\n");
+    // LCD clear
+    lcd_clrscr();
 
+    // LCD prints based on current state:
+    if (data[idx] == 'M') {
         lcd_clrscr();
         lcd_puts("Status:");
         lcd_gotoxy(0, 1);
@@ -126,6 +123,7 @@ void parser(char *data)
         lcd_gotoxy(0, 1);
         lcd_puts(&data[1]);
 
+        // Correct password, so buzzer is offed via timer clear.
         TIMER1_Clear();
     }
     else if (data[idx] == 'W') {
@@ -136,8 +134,9 @@ void parser(char *data)
 
         // Initialize timer 1 PWM mode
         TIMER1_Init_Mode_9();
+        // Setup for playing a Note
         TIMER1_SetPrescaler(PS_8);
-        TIMER1_SetTarget(NOTE_C3);
+        TIMER1_SetTarget(NOTE_C1);
     }
     else if (data[idx] == 'T') {
         lcd_clrscr();
@@ -147,6 +146,7 @@ void parser(char *data)
 
         // Initialize timer 1 PWM mode
         TIMER1_Init_Mode_9();
+        // Setup for playing a Note
         TIMER1_SetPrescaler(PS_8);
         TIMER1_SetTarget(NOTE_C5);
     }
@@ -156,6 +156,7 @@ void parser(char *data)
         lcd_gotoxy(0, 1);
         lcd_puts("Armed");
 
+        // Clear timer for Reset (just to be sure)
         TIMER1_Clear();
     }
 }
@@ -165,30 +166,18 @@ void parser(char *data)
  */
 void rearm(char *recv)
 {
-    // reset recv
+    // Reset recv
     for (uint8_t idx = 0; idx < DATA_SIZE + 1; idx++) {
         recv[idx] = '\0';
     }
 
-    // reset lcd
+    // Reset lcd
     lcd_init(LCD_DISP_ON);
     lcd_clrscr();
     lcd_puts("Welcome!");
 
     // clear buzzer
     TIMER1_Clear();
-}
-
-/*
- * Function to get the lentgh of a string.
- */
-uint16_t len(char *data)
-{
-    uint16_t count = 0;
-    while (data[count] != '\0') {
-        count++;
-    }
-    return count;
 }
 
 /*
