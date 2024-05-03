@@ -2,7 +2,7 @@
 #define F_CPU 16000000UL
 #define SLAVE_ADDRESS 170
 #define BAUD 9600
-#define MYUBRR F_CPU / 16 / BAUD - 1
+#define MYUBRR (F_CPU / 16 / BAUD - 1)
 
 #define DATA_SIZE 16
 #define CODE_ARRAY_LENGTH 5
@@ -37,20 +37,24 @@ volatile uint8_t state = 0;
 volatile uint8_t data_incoming = 0;
 
 // Parser to check system condition
-void parser(char *data, char *code);
+void 
+parser(char *data, char *code);
 
 /*
  * I2C / TWI communication initialization with Master.
  */
-void I2C_InitSlaveReceiver(uint8_t address);
+void 
+I2C_InitSlaveReceiver(uint8_t address);
 
 /*
  * I2C / TWI receive from Master.
  */
-void I2C_Receive(char *dest);
+void 
+I2C_Receive(char *dest);
 
 // Array length calculator
-uint16_t len(char *data);
+uint16_t 
+len(char *data);
 
 // LCD Display PINS WARNING remember to change from lcd.h also
 const int LCD_RS = PB2;
@@ -66,7 +70,8 @@ const int LCD_D7 = PD7;
 const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
-void enableExternalInterrupt()
+void 
+enableExternalInterrupt()
 {
     // External interrupt Control Register for when Master tries to transmit
     // data to slave. UNO Doc. 70-72 table 13-1 and 2
@@ -74,7 +79,8 @@ void enableExternalInterrupt()
     EIMSK |= (1 << INT0);
 }
 
-void disableExternalInterrupt()
+void 
+disableExternalInterrupt()
 {
     EICRA = 0;
     EIMSK = 0;
@@ -90,7 +96,8 @@ ISR(INT0_vect)
     data_incoming = 1;
 }
 
-int main(void)
+int
+main(void)
 {
     // // LCD PINS
     // OUTPUTS CONTROL
@@ -127,11 +134,16 @@ int main(void)
     I2C_InitSlaveReceiver(SLAVE_ADDRESS);
     // lcd_clrscr();
 
-    while (1) {
-        if (state == BUZZ) {
-            // Something
+    for (;;) {
+        
+        // wait for transmission:
+        while (!(TWCR & (1 << TWINT)))
+        {
+            // do buzzer while waiting
+            // TODO: buzzer functionality
             PORTB ^= (1 << BUILTIN);
         }
+
         I2C_Receive(recv);
         lcd_clrscr();
         parser(recv, code);
@@ -158,7 +170,8 @@ int main(void)
  *
  * @returns void
  */
-void parser(char *data, char *code)
+void 
+parser(char *data, char *code)
 {
     uint8_t idx = 0;
 
@@ -195,7 +208,8 @@ void parser(char *data, char *code)
     code[CODE_ARRAY_LENGTH - 1] = '\0';
 }
 
-uint16_t len(char *data)
+uint16_t 
+len(char *data)
 {
     uint16_t count = 0;
     while (data[count] != '\0') {
@@ -210,7 +224,8 @@ uint16_t len(char *data)
  * Follows closely Atmel Mega 2560 document of which page 253 - 254 contain
  * relevant information. Figure 24-15.
  */
-void I2C_InitSlaveReceiver(uint8_t address)
+void 
+I2C_InitSlaveReceiver(uint8_t address)
 {
     // Devices own Slave Address
     TWAR = address;
@@ -225,13 +240,10 @@ void I2C_InitSlaveReceiver(uint8_t address)
 /*
  Function to receive data from Master:
  */
-void I2C_Receive(char *received)
+void 
+I2C_Receive(char *received)
 {
     uint8_t twi_stat, twi_idx = 0;
-
-    // wait for transmission:
-    while (!(TWCR & (1 << TWINT)))
-        ;
 
     // Set status
     twi_stat = (TWSR & 0xF8);
@@ -241,14 +253,16 @@ void I2C_Receive(char *received)
 
     // Waiting for TWINT to set:
     while (!(TWCR & (1 << TWINT)))
+    {
         ;
+    }
 
     // Set status
     twi_stat = (TWSR & 0xF8);
 
     // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
     // Condition check of twi_status if previous was response of either slave
-    // address or general call and NOT ACK return
+    // address or general call and ACK return
     while ((twi_stat == 0x80) || (twi_stat == 0x90)) {
         received[twi_idx] = TWDR;
         twi_idx++;
@@ -262,7 +276,9 @@ void I2C_Receive(char *received)
 
         // Wait for TWINT to set
         while (!(TWCR & (1 << TWINT)))
+        {
             ;
+        }
 
         // Status update
         twi_stat = (TWSR & 0xF8);
@@ -273,52 +289,11 @@ void I2C_Receive(char *received)
         received[twi_idx] = TWDR;
         twi_idx++;
     }
-    else if ((twi_stat == 0xA0)) { // STOP signal
+
+    // STOP signal or repeated start signal
+    else if ((twi_stat == 0xA0)) {
         TWCR |= (1 << TWINT);
     }
 }
 
-/*
- Function to receive data from Master:
- */
-void I22C_Receive(char *received)
-{
-    uint8_t twi_stat, twi_idx = 0;
-
-    // wait for transmission:
-    while (!(TWCR & (1 << TWINT)))
-        ;
-
-    // Set status
-    twi_stat = (TWSR & 0xF8);
-
-    // Reset the TWEA and TWEN and create ACK
-    TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
-
-    // Waiting for TWINT to set:
-    while (!(TWCR & (1 << TWINT)))
-        ;
-
-    // Set status
-    twi_stat = (TWSR & 0xF8);
-
-    // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
-    // Condition check of twi_status if previous was response of either slave
-    // address or general call and NOT ACK return
-    if ((twi_stat == 0x80) || (twi_stat == 0x90)) {
-        received[twi_idx] = TWDR;
-        twi_idx++;
-    }
-    else if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
-        received[twi_idx] = TWDR;
-        twi_idx++;
-    }
-    else if ((twi_stat == 0xA0)) { // STOP signal
-        TWCR |= (1 << TWINT);
-    }
-
-    if (DATA_SIZE <= twi_idx) {
-        printf("%s", received);
-        twi_idx = 0;
-    }
-}
+/* EOF */
