@@ -40,15 +40,20 @@
 #include "uart.h"
 
 // Bytes to cause an alarm on UNO
-const char WRONG_CODE[] = "P\0";
-const char TIMES_UP[] = "T\0";
+const char WRONG_CODE[] = "W";
+const char CORRECT_CODE[] = "C";
+const char TIMES_UP[] = "T";
 
 // Timer is started signal
-const char MOVEMENT[] = "M\0";
+const char MOVEMENT[] = "M";
 
 // Reset
-const char RESET[] = "R\0";
+const char REARM[] = "R";
 
+/*
+ * [ #KOODI ]
+ * [ # ]
+ */
 const int PIR_SIGNAL = PE3;
 const int REARM_BTN = PG5;
 const int ALARM_LED = PH3;
@@ -72,8 +77,6 @@ void I2C_Transmit(uint8_t address, const char *data);
 volatile uint8_t isCodeValid = 0;
 int8_t read_keypad_code(char *dest, uint8_t code_len);
 int verify_code(char *to_be_checked, char *correct);
-// Check if c in char array
-int8_t cInArr(char c, char *arr);
 
 /*
  Timer 3 counter for 10 second countdown from PIR sense.
@@ -92,7 +95,7 @@ ISR(TIMER3_COMPA_vect)
         TIMER3_Clear();
         second_counter = 0;
         I2C_Init();
-        I2C_Transmit(SLAVE_ADDRESS, &TIMES_UP);
+        I2C_Transmit(SLAVE_ADDRESS, TIMES_UP);
     }
 }
 
@@ -103,6 +106,8 @@ int main(void)
 
     // Initialize empty code given by user.
     char usersCode[CODE_ARRAY_LENGTH] = {'\0'};
+
+    char transfer_data[DATA_SIZE] = {'\0'};
 
     // Output demo for alarm buzzer (currently RED LED)
     DDRH |= (1 << ALARM_LED) | (1 << I2C_ERROR) | (1 << I2C_OK);
@@ -151,32 +156,36 @@ int main(void)
         case KEY_INSERTION:
             read_keypad_code(usersCode, CODE_ARRAY_LENGTH - 1);
             isCodeValid = verify_code(usersCode, correctCode);
+
             if (isCodeValid) {
                 // Clear timer and turn it "off"
                 TIMER3_Clear();
+
+                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                    transfer_data[idx] = '\0';
+                }
+                strcat(transfer_data, CORRECT_CODE);
+                strcat(transfer_data, usersCode);
+                printf("%s\n", transfer_data);
 
                 // Turn off alarm
                 PORTH &= ~(1 << ALARM_LED);
 
                 // Transmit information to Slave
                 I2C_Init();
-
-                // Send the code to UNO
-                I2C_Transmit(SLAVE_ADDRESS, usersCode);
-
-                // Move to Idle
-                printf("Goin idle at 16Mhz...\n");
+                I2C_Transmit(SLAVE_ADDRESS, transfer_data);
                 state = PIR_TIMER_ALARM_OFF;
             }
             else {
                 // Initialize connection
                 I2C_Init();
-
-                // Transmit incorrect symbol
-                I2C_Transmit(SLAVE_ADDRESS, WRONG_CODE);
-
-                // Transmit incorrect symbol
-                I2C_Transmit(SLAVE_ADDRESS, usersCode);
+                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                    transfer_data[idx] = '\0';
+                }
+                strcat(transfer_data, WRONG_CODE);
+                strcat(transfer_data, usersCode);
+                printf("%s\n", transfer_data);
+                I2C_Transmit(SLAVE_ADDRESS, transfer_data);
             }
             break;
 
@@ -186,6 +195,15 @@ int main(void)
                 state = PIR_SENSE;
                 isCodeValid = 0;
                 second_counter = 0;
+
+                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                    transfer_data[idx] = '\0';
+                }
+                strcat(transfer_data, REARM);
+                printf("%s\n", transfer_data);
+
+                I2C_Init();
+                I2C_Transmit(SLAVE_ADDRESS, transfer_data);
             }
             break;
         }
@@ -317,7 +335,6 @@ int8_t read_keypad_code(char *dest, uint8_t code_len)
         // End point to exit function if enough digits given and [A]ccept
         else if ((chr == 'A') && (index == code_len)) {
             break;
-
         }
     }
 
