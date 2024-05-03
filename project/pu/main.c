@@ -49,6 +49,57 @@ void rearm();
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 
+// Main function that includes the main loop
+int main(void)
+{
+    // // LCD PINS
+    // OUTPUTS CONTROL
+    DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN) | (1 << BUILTIN);
+    // OUTPUTS DATA
+    DDRD |= (1 << LCD_D4) | (1 << LCD_D5) | (1 << LCD_D6) | (1 << LCD_D7);
+
+    // Buzzer OUTPUT
+    DDRB |= (1 << BUZZER);
+
+    // Initialize empty recv char array
+    char recv[DATA_SIZE + 1] = {'\0'};
+
+    // Init debug communication Through USB
+    USART_Init(MYUBRR);
+    stdin = &mystdin;
+    stdout = &mystdout;
+
+    // Init LCD display
+    lcd_init(LCD_DISP_ON);
+    lcd_clrscr();
+    lcd_puts("Welcome!");
+
+    // Setup TWI communication with Master
+    I2C_InitSlaveReceiver(SLAVE_ADDRESS);
+
+    for (;;) {
+        printf("Going to take a while\n");
+        
+        // wait for transmission:
+        while (!(TWCR & (1 << TWINT))) {
+            // do buzzer while waiting
+            // TODO: buzzer functionality
+            PORTB |= (1 << BUILTIN);
+            _delay_ms(200);
+            PORTB &= ~(1 << BUILTIN);
+            _delay_ms(200);
+        }
+
+        printf("Finally out of a while\n");
+        I2C_Receive(recv);
+        lcd_clrscr();
+        parser(recv);
+
+        printf("Recv: %s \n", recv);
+        printf("Koodi: %s\n", code);
+    }
+    return 0;
+}
 
 /*
  * Check the system status based on received data
@@ -104,13 +155,24 @@ void parser(char *data)
 
         TIMER1_Clear();
     }
+}
 
-    // If the code is given, it will
-    else if ((CODE_ARRAY_LENGTH - 1) > idx) {
-        code[idx] = data[idx];
+/*
+ * Resets recv, lcd and buzzer
+ */
+void rearm(char *recv) {
+    // reset recv
+    for (uint8_t idx = 0; idx < DATA_SIZE + 1; idx++) {
+        recv[idx] = '\0';
     }
 
-    code[CODE_ARRAY_LENGTH - 1] = '\0';
+    // reset lcd
+    lcd_init(LCD_DISP_ON);
+    lcd_clrscr();
+    lcd_puts("Welcome!");
+    
+    // clear buzzer
+    TIMER1_Clear();
 }
 
 /*
@@ -216,6 +278,3 @@ void I2C_Receive(char *received)
 }
 
 /* EOF */
-
-
-
