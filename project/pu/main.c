@@ -37,24 +37,20 @@ volatile uint8_t state = 0;
 volatile uint8_t data_incoming = 0;
 
 // Parser to check system condition
-void 
-parser(char *data, char *code);
+void parser(char *data, char *code);
 
 /*
  * I2C / TWI communication initialization with Master.
  */
-void 
-I2C_InitSlaveReceiver(uint8_t address);
+void I2C_InitSlaveReceiver(uint8_t address);
 
 /*
  * I2C / TWI receive from Master.
  */
-void 
-I2C_Receive(char *dest);
+void I2C_Receive(char *dest);
 
 // Array length calculator
-uint16_t 
-len(char *data);
+uint16_t len(char *data);
 
 // LCD Display PINS WARNING remember to change from lcd.h also
 const int LCD_RS = PB2;
@@ -70,8 +66,7 @@ const int LCD_D7 = PD7;
 const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
-void 
-enableExternalInterrupt()
+void enableExternalInterrupt()
 {
     // External interrupt Control Register for when Master tries to transmit
     // data to slave. UNO Doc. 70-72 table 13-1 and 2
@@ -79,8 +74,7 @@ enableExternalInterrupt()
     EIMSK |= (1 << INT0);
 }
 
-void 
-disableExternalInterrupt()
+void disableExternalInterrupt()
 {
     EICRA = 0;
     EIMSK = 0;
@@ -92,12 +86,11 @@ ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 // Interrupt routine for I2C transfer
 ISR(INT0_vect)
 {
-    printf("Data incoming\n");
+    // printf("Data incoming\n");
     data_incoming = 1;
 }
 
-int
-main(void)
+int main(void)
 {
     // // LCD PINS
     // OUTPUTS CONTROL
@@ -135,15 +128,15 @@ main(void)
     // lcd_clrscr();
 
     for (;;) {
-        
+        printf("Going to take a while\n");
         // wait for transmission:
-        while (!(TWCR & (1 << TWINT)))
-        {
+        while (!(TWCR & (1 << TWINT))) {
             // do buzzer while waiting
             // TODO: buzzer functionality
-            PORTB ^= (1 << BUILTIN);
+            PORTB |= (1 << BUILTIN);
         }
 
+        printf("Finally out of a while\n");
         I2C_Receive(recv);
         lcd_clrscr();
         parser(recv, code);
@@ -153,7 +146,6 @@ main(void)
             lcd_puts("Code:");
             lcd_gotoxy(0, 1);
             lcd_puts(code);
-            printf("Code %s\n", code);
         }
         // data_incoming = 0;
         // lcd_puts(recv);
@@ -170,21 +162,21 @@ main(void)
  *
  * @returns void
  */
-void 
-parser(char *data, char *code)
+void parser(char *data, char *code)
 {
     uint8_t idx = 0;
 
     while (data[idx] != '\0') {
         if (data[idx] == 'M') {
             state = MOVEMENT;
+            printf("Going to take a while\n");
 
             lcd_clrscr();
             lcd_puts("Status:");
             lcd_gotoxy(0, 1);
             lcd_puts("Movement!");
         }
-        else if (data[idx] == 'P') {
+        else if (data[idx] == 'O') {
             state = BUZZ;
             lcd_clrscr();
             lcd_puts("Wrong Password");
@@ -208,8 +200,7 @@ parser(char *data, char *code)
     code[CODE_ARRAY_LENGTH - 1] = '\0';
 }
 
-uint16_t 
-len(char *data)
+uint16_t len(char *data)
 {
     uint16_t count = 0;
     while (data[count] != '\0') {
@@ -224,8 +215,7 @@ len(char *data)
  * Follows closely Atmel Mega 2560 document of which page 253 - 254 contain
  * relevant information. Figure 24-15.
  */
-void 
-I2C_InitSlaveReceiver(uint8_t address)
+void I2C_InitSlaveReceiver(uint8_t address)
 {
     // Devices own Slave Address
     TWAR = address;
@@ -240,8 +230,7 @@ I2C_InitSlaveReceiver(uint8_t address)
 /*
  Function to receive data from Master:
  */
-void 
-I2C_Receive(char *received)
+void I2C_Receive(char *received)
 {
     uint8_t twi_stat, twi_idx = 0;
 
@@ -252,8 +241,7 @@ I2C_Receive(char *received)
     TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
 
     // Waiting for TWINT to set:
-    while (!(TWCR & (1 << TWINT)))
-    {
+    while (!(TWCR & (1 << TWINT))) {
         ;
     }
 
@@ -275,8 +263,7 @@ I2C_Receive(char *received)
         TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
 
         // Wait for TWINT to set
-        while (!(TWCR & (1 << TWINT)))
-        {
+        while (!(TWCR & (1 << TWINT))) {
             ;
         }
 
