@@ -1,3 +1,15 @@
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util/delay.h>
+
+#include "keypad.h"
+#include "timer3.h"
+#include "uart.h"
+
 #define F_CPU 16000000UL
 #define BAUD 9600
 #define MYUBRR F_CPU / 16 / BAUD - 1
@@ -8,7 +20,7 @@
 #define SLAVE_ADDRESS 170
 
 /*
- * State machine states:
+ * g_State machine g_states:
  *
  * 0 PIR Sense
  * 1 TIMER ON
@@ -23,30 +35,19 @@
 // Countdown in seconds
 #define ALARM_TIMER 10
 
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <util/delay.h>
-
-#include "keypad.h"
-#include "timer3.h"
-#include "uart.h"
-
 // Signals to cause an alarm on UNO
-const char WRONG_CODE[] = "W";
-const char TIMES_UP[] = "T";
+const char g_wrong_code_signal[] = "W";
+const char g_times_up_signal[] = "T";
 
 // Correct signal
-const char CORRECT_CODE[] = "C";
+const char g_correct_code_signal[] = "C";
 
 // Timer is started signal
-const char MOVEMENT[] = "M";
+const char g_movement_signal[] = "M";
 
 // Reset signal
-const char REARM[] = "R";
+const char g_rearm_signal[] = "R";
+
 
 // All pins that are used on the Mega
 const int PIR_SIGNAL = PE3;
@@ -56,7 +57,17 @@ const int I2C_ERROR = PH4;
 const int I2C_OK = PH5;
 
 // State machine state
-volatile int8_t state = 0;
+volatile int8_t g_state = 0;
+
+/*
+ * Keypad code reading and verification.
+ */
+volatile uint8_t g_is_code_valid = 0;
+
+/*
+ Timer 3 counter for 10 second countdown from PIR sense.
+ */
+volatile uint16_t g_second_counter = 0;
 
 /*
  * I2C / TWI transmission initialization with 400 kHz clock.
@@ -64,7 +75,7 @@ volatile int8_t state = 0;
  *
  * @returns void
  */
-void I2C_Init();
+static void i2c_init();
 
 /*
  * I2C / TWI Transmission from Master to Slave address with data.
@@ -73,53 +84,25 @@ void I2C_Init();
  *
  * @returns void
  */
-void I2C_Transmit(uint8_t address, const char *data);
+static void i2c_transmit(uint8_t address, const char *data);
 
 /*
  * Keypad code reading and verification.
  */
-volatile uint8_t isCodeValid = 0;
-int8_t read_keypad_code(char *dest, uint8_t code_len);
-int verify_code(char *to_be_checked, char *correct);
-
-/*
- Timer 3 counter for 10 second countdown from PIR sense.
- */
-volatile uint16_t second_counter = 0;
-
-/*
- * Interrupt Service Routine for Timer 3.
- * Causes alarm if 10 seconds have passed.
- */
-ISR(TIMER3_COMPA_vect)
-{
-    TCNT3 = 0;
-    second_counter++;
-    if (ALARM_TIMER <= second_counter) {
-        // Led indicating ALARM is ON
-        PORTH |= (1 << ALARM_LED);
-
-        // Timer is cleared so this interrupt does not fire again until reset
-        TIMER3_Clear();
-        second_counter = 0;
-
-        // Send system state information to UNO
-        I2C_Init();
-        I2C_Transmit(SLAVE_ADDRESS, TIMES_UP);
-    }
-}
+static int8_t read_keypad_code(char *dest, uint8_t code_len);
+static int verify_code(char *to_be_checked, char *correct);
 
 int main(void)
 {
     // Define the correct keycode.
-    char correctCode[CODE_ARRAY_LENGTH] = "0423";
+    char correct_keycode[CODE_ARRAY_LENGTH] = "0423";
 
     // Initialize empty code given by user.
-    char usersCode[CODE_ARRAY_LENGTH] = {'\0'};
+    char users_code[CODE_ARRAY_LENGTH] = {'\0'};
 
     /*
      * Data which is send to the UNO, this has the following format:
-     * [ #CODE ] or [ # ] where # represents states W, C, T, R, M declared as
+     * [ #CODE ] or [ # ] where # represents g_states W, C, T, R, M declared as
      * global constants.
      */
     char transfer_data[DATA_SIZE] = {'\0'};
@@ -127,80 +110,80 @@ int main(void)
     // Output demo for alarm buzzer (currently RED LED)
     DDRH |= (1 << ALARM_LED) | (1 << I2C_ERROR) | (1 << I2C_OK);
 
-    // PIR sensor input upon movement
+    // PIR sensor input upon Movement
     DDRE &= ~(1 << PIR_SIGNAL);
 
     // Input pin for rearming the system.
     DDRG &= ~(1 << REARM_BTN);
 
     // Initialize connection through USB for debugging.
-    USART_Init(MYUBRR);
+    usart_init(MYUBRR);
     stdin = &mystdin;
     stdout = &mystdout;
 
     // Keypad initialization for getting users input from keypad.
     KEYPAD_Init();
 
-    // Main logic loop, state machine.
+    // Main logic loop, g_state machine.
     while (1) {
-        switch (state) {
+        switch (g_state) {
         case PIR_SENSE:
-            // If PIR senses movement move to TIMER_ON state and sent state
+            // If PIR senses Movement. Move to TIMER_ON g_state and sent g_state
             // information to UNO
             if (PINE & (1 << PIR_SIGNAL)) {
-                state = TIMER_ON;
-                I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, MOVEMENT);
+                g_state = TIMER_ON;
+                i2c_init();
+                i2c_transmit(SLAVE_ADDRESS, g_movement_signal);
             }
             break;
 
         case TIMER_ON:
             // Initializing timer 3
-            TIMER3_Init_CTC();
+            timer3_init_ctc();
 
             // Setting the timer 3 to interrupt every second
-            TIMER3_SetIntervalSecond();
+            timer3_set_interval_second();
 
             // Go wait for correct user input.
-            state = KEY_INSERTION;
+            g_state = KEY_INSERTION;
             break;
 
         case KEY_INSERTION:
             // Get keycode from user
-            read_keypad_code(usersCode, CODE_ARRAY_LENGTH - 1);
+            read_keypad_code(users_code, CODE_ARRAY_LENGTH - 1);
 
             // Verify the codes correctness
-            isCodeValid = verify_code(usersCode, correctCode);
+            g_is_code_valid = verify_code(users_code, correct_keycode);
 
             // Case correct code
-            if (isCodeValid) {
+            if (g_is_code_valid) {
                 // Clear timer, just to be sure
-                TIMER3_Clear();
+                timer3_clear();
 
                 // Clear array so no unintended bytes are sent
-                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
                 // Concatenate the data to be sent
-                strcat(transfer_data, CORRECT_CODE);
-                strcat(transfer_data, usersCode);
+                strcat(transfer_data, g_correct_code_signal);
+                strcat(transfer_data, users_code);
 
                 // Turn off alarm led
                 PORTH &= ~(1 << ALARM_LED);
 
                 // Transmit information to Slave
-                I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, transfer_data);
-
-                // Move to the final state
-                state = PIR_TIMER_ALARM_OFF;
+                i2c_init();
+                i2c_transmit(SLAVE_ADDRESS, transfer_data);
+                // Move to the final g_state
+                g_state = PIR_TIMER_ALARM_OFF;
             }
+
             // Case wrong code
             else {
 
-                // Clear array of uninteded bytes
-                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                // Clear array of unintended bytes
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
@@ -208,16 +191,16 @@ int main(void)
                 PORTH |= (1 << ALARM_LED);
 
                 // Concatenate the data to be sent
-                strcat(transfer_data, WRONG_CODE);
-                strcat(transfer_data, usersCode);
+                strcat(transfer_data, g_wrong_code_signal);
+                strcat(transfer_data, users_code);
 
                 // Initialize connection and Send data
-                I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, transfer_data);
+                i2c_init();
+                i2c_transmit(SLAVE_ADDRESS, transfer_data);
             }
             break;
 
-        case PIR_TIMER_ALARM_OFF: // Idle state
+        case PIR_TIMER_ALARM_OFF: // Idle g_state
             // Waiting for system rearming.
             /*
              * We decided to allow rearming only in the case where user gives
@@ -225,18 +208,18 @@ int main(void)
              */
             if (PING & (1 << REARM_BTN)) {
                 // Resetting variables
-                state = PIR_SENSE;
-                isCodeValid = 0;
-                second_counter = 0;
+                g_state = PIR_SENSE;
+                g_is_code_valid = 0;
+                g_second_counter = 0;
 
                 // Clear transfer_data
-                for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
-                // Send state information to UNO
-                I2C_Init();
-                I2C_Transmit(SLAVE_ADDRESS, REARM);
+                // Send g_state information to UNO
+                i2c_init();
+                i2c_transmit(SLAVE_ADDRESS, g_rearm_signal);
             }
             break;
         }
@@ -251,8 +234,13 @@ int main(void)
  *
  * @returns void
  */
-void I2C_Init()
+static void i2c_init()
 {
+    // Clear registers
+    TWSR = 0;
+    TWBR = 0;
+    TWCR = 0;
+
     // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
     // 4^(TWSR):
     TWSR = 0x00;         // Prescaler to 1
@@ -267,15 +255,16 @@ void I2C_Init()
  *
  * @returns void
  */
-void I2C_Transmit(uint8_t address, const char *data)
+static void i2c_transmit(uint8_t address, const char *data)
 {
     uint8_t twi_stat = 0;
 
     // Start transmission:
     TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 
-    while (!(TWCR & (1 << TWINT)))
+    while (!(TWCR & (1 << TWINT))) {
         ;
+    }
 
     // Read status from TWI status register
     twi_stat = (TWSR & 0xF8);
@@ -287,12 +276,13 @@ void I2C_Transmit(uint8_t address, const char *data)
     TWCR = (1 << TWINT) | (1 << TWEN);
 
     // Wait TWINT to set
-    while (!(TWCR & (1 << TWINT)))
+    while (!(TWCR & (1 << TWINT))) {
         ;
+    }
 
     twi_stat = (TWSR & 0xF8);
 
-    // Check if the connection to Slave is successful (Slave returns ACK)
+    // Check if the connection to Slave fails (Slave does not return ACK)
     if ((twi_stat != 0x18) && (twi_stat != 0x40)) {
         // Set error led ON
         PORTH |= (1 << I2C_ERROR);
@@ -309,15 +299,16 @@ void I2C_Transmit(uint8_t address, const char *data)
     // Send data byte at a time until either 16 bytes has been sent or data
     // array has reached its end.
     for (uint8_t twi_d_idx = 0;
-         twi_d_idx < DATA_SIZE && (data[twi_d_idx] != '\0'); twi_d_idx++) {
+         (DATA_SIZE > twi_d_idx) && ('\0' != data[twi_d_idx]); twi_d_idx++) {
         TWDR = data[twi_d_idx];
 
         // Reset TWINT to transmit data
         TWCR = (1 << TWINT) | (1 << TWEN);
 
         // Wait for TWINT to set
-        while (!(TWCR & (1 << TWINT)))
+        while (!(TWCR & (1 << TWINT))) {
             ;
+        }
 
         twi_stat = (TWSR & 0xF8);
     }
@@ -337,7 +328,7 @@ void I2C_Transmit(uint8_t address, const char *data)
  *
  * @returns 0 for success
  */
-int8_t read_keypad_code(char *dest, uint8_t code_len)
+static int8_t read_keypad_code(char *dest, uint8_t code_len)
 {
     int index = 0;
     char chr = 0;
@@ -349,11 +340,11 @@ int8_t read_keypad_code(char *dest, uint8_t code_len)
 
     // Get users input until the user presses [A]ccept on the keypad and
     // user has given long enough password.
-    while (1) {
+    for (;;) {
         chr = KEYPAD_GetKey();
 
         // Check for digit in range 0 - 9
-        if ((chr >= '0') && (chr <= '9')) {
+        if (('0' <= chr) && ('9' >= chr)) {
             // We want to store the last code_len amount of digits
             if (index >= code_len) {
                 memmove(dest, dest + 1, code_len - 1);
@@ -361,12 +352,14 @@ int8_t read_keypad_code(char *dest, uint8_t code_len)
             }
             dest[index++] = chr;
         }
+
         // Allow the [D]eletion of previous char if it exists
         else if (chr == 'D' && index > 0) {
             index--;
         }
+
         // End point to exit function if enough digits given and [A]ccept
-        else if ((chr == 'A') && (index == code_len)) {
+        else if (('A' == chr) && (index == code_len)) {
             break;
         }
     }
@@ -387,14 +380,38 @@ int8_t read_keypad_code(char *dest, uint8_t code_len)
  * @returns int 1 for arrays being identical in the shortest arrays scope and 0
  * if the arrays do not match in the shortest arrays scope.
  */
-int verify_code(char *to_be_checked, char *correct)
+static int verify_code(char *to_be_checked, char *correct)
 {
-    uint8_t i = 0;
-    while ((to_be_checked[i] != '\0') && (correct[i] != '\0')) {
-        if (to_be_checked[i] != correct[i]) {
+    uint8_t idx = 0;
+    while (('\0' != to_be_checked[idx]) && ('\0' != correct[idx])) {
+        if (to_be_checked[idx] != correct[idx]) {
             return 0;
         }
-        i++;
+        idx++;
     }
     return 1;
 }
+
+/*
+ * Interrupt Service Routine for Timer 3.
+ * Causes alarm if 10 seconds have passed.
+ */
+ISR(TIMER3_COMPA_vect)
+{
+    TCNT3 = 0;
+    g_second_counter++;
+    if (ALARM_TIMER <= g_second_counter) {
+        // Led indicating ALARM is ON
+        PORTH |= (1 << ALARM_LED);
+
+        // Timer is cleared so this interrupt does not fire again until reset
+        timer3_clear();
+        g_second_counter = 0;
+
+        // Send system g_state information to UNO
+        i2c_init();
+        i2c_transmit(SLAVE_ADDRESS, g_times_up_signal);
+    }
+}
+
+/* EOF */

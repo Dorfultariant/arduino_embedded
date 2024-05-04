@@ -10,13 +10,13 @@
  * @param None
  * @returns Void
  */
-void TIMER1_Init_Mode_9()
+void timer1_init_mode_9()
 {
     // Enables interrupts
     sei();
 
     // Clear registers
-    TIMER1_Clear();
+    timer1_clear();
 
     // Toggle on compare match: UNO 328p doc 131 table 16-1.
     TCCR1A |= (1 << COM1A0);
@@ -36,7 +36,7 @@ void TIMER1_Init_Mode_9()
  * @param None
  * @returns void
  */
-void TIMER1_Clear()
+void timer1_clear()
 {
     TCCR1A = 0;
     TCCR1B = 0;
@@ -50,7 +50,7 @@ void TIMER1_Clear()
  * @param None
  * @returns Void
  */
-void TIMER1_SetPrescaler(const uint16_t prescaler)
+void timer1_set_prescaler(const uint16_t prescaler)
 {
     switch (prescaler) {
     case 1:
@@ -84,7 +84,7 @@ void TIMER1_SetPrescaler(const uint16_t prescaler)
  * @param uint16_t value of target TOP.
  * @returns Void
  */
-void TIMER1_SetTarget(uint16_t value) { OCR1A = value; }
+void timer1_set_target(uint16_t value) { OCR1A = value; }
 
 /*
  EOF

@@ -1,11 +1,4 @@
 #include "timer1.h"
-#define F_CPU 16000000UL
-#define SLAVE_ADDRESS 170
-#define BAUD 9600
-#define MYUBRR (F_CPU / 16 / BAUD - 1)
-
-#define DATA_SIZE 16
-#define CODE_ARRAY_LENGTH 5
 
 #include <avr/interrupt.h>
 #include <stdint.h>
@@ -16,6 +9,14 @@
 #include "notes.h"
 #include "timer1.h"
 #include "uart.h"
+
+#define F_CPU 16000000UL
+#define SLAVE_ADDRESS 170
+#define BAUD 9600
+#define MYUBRR (((F_CPU / 16) / BAUD) - 1)
+
+// Max size of transferable data
+#define DATA_SIZE 16
 
 // LCD Display PINS NOTE remember to change from lcd.h also
 const int LCD_RS = PB2;
@@ -32,16 +33,16 @@ const int BUZZER = PB1;
 const int BUILTIN = PB5;
 
 // Parser to check system condition
-void parser(char *data);
+static void parser(char *data);
 
 // I2C / TWI communication initialization with Master.
-void I2C_InitSlaveReceiver(uint8_t address);
+static void i2c_init_slave_receiver(uint8_t address);
 
 // I2C / TWI receive from Master.
-void I2C_Receive(char *dest);
+static void i2c_receive(char *dest);
 
 // Rearm system
-void rearm(char *recv);
+static void rearm(char *recv);
 
 // Interrupt routine for timer
 ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
@@ -49,7 +50,7 @@ ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 // Main function that includes the main loop
 int main(void)
 {
-    // // LCD PINS
+    /*      LCD PINS     */
     // OUTPUTS CONTROL
     DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN) | (1 << BUILTIN);
     // OUTPUTS DATA
@@ -62,7 +63,7 @@ int main(void)
     char recv[DATA_SIZE] = {'\0'};
 
     // Init debug communication Through USB
-    USART_Init(MYUBRR);
+    usart_init(MYUBRR);
     stdin = &mystdin;
     stdout = &mystdout;
 
@@ -72,7 +73,7 @@ int main(void)
     lcd_puts("Welcome!");
 
     // Setup TWI communication with Master
-    I2C_InitSlaveReceiver(SLAVE_ADDRESS);
+    i2c_init_slave_receiver(SLAVE_ADDRESS);
 
     for (;;) {
         // wait for transmission:
@@ -86,11 +87,12 @@ int main(void)
         }
         // When transmission is coming, the information will be stored in the
         // recv array.
-        I2C_Receive(recv);
+        i2c_receive(recv);
 
         // The received data is parsed and information is printed to the LCD.
         parser(recv);
     }
+
     return 0;
 }
 
@@ -102,7 +104,7 @@ int main(void)
  *
  * @returns void
  */
-void parser(char *data)
+static void parser(char *data)
 {
     // First byte of data is checked as it represents the system state.
     uint8_t idx = 0;
@@ -110,34 +112,40 @@ void parser(char *data)
     // LCD clear
     lcd_clrscr();
 
-    // LCD prints based on current state:
+    // LCD prints and buzzer is turned on
+    // based on character received
     if (data[idx] == 'M') {
         lcd_clrscr();
         lcd_puts("Status:");
         lcd_gotoxy(0, 1);
         lcd_puts("Movement!");
     }
+
     else if (data[idx] == 'C') {
         lcd_clrscr();
         lcd_puts("Correct Password");
         lcd_gotoxy(0, 1);
+        // First byte is state, print rest to LCD
         lcd_puts(&data[1]);
 
         // Correct password, so buzzer is offed via timer clear.
-        TIMER1_Clear();
+        timer1_clear();
     }
+
     else if (data[idx] == 'W') {
         lcd_clrscr();
         lcd_puts("Wrong Password:");
         lcd_gotoxy(0, 1);
+        // First byte is state, print rest to LCD
         lcd_puts(&data[1]);
 
         // Initialize timer 1 PWM mode
-        TIMER1_Init_Mode_9();
+        timer1_init_mode_9();
         // Setup for playing a Note
-        TIMER1_SetPrescaler(PS_8);
-        TIMER1_SetTarget(NOTE_C1);
+        timer1_set_prescaler(PS_8);
+        timer1_set_target(NOTE_C1);
     }
+
     else if (data[idx] == 'T') {
         lcd_clrscr();
         lcd_puts("Status:");
@@ -145,11 +153,12 @@ void parser(char *data)
         lcd_puts("TIME IS UP!");
 
         // Initialize timer 1 PWM mode
-        TIMER1_Init_Mode_9();
+        timer1_init_mode_9();
         // Setup for playing a Note
-        TIMER1_SetPrescaler(PS_8);
-        TIMER1_SetTarget(NOTE_C5);
+        timer1_set_prescaler(PS_8);
+        timer1_set_target(NOTE_C5);
     }
+
     else if (data[idx] == 'R') {
         lcd_clrscr();
         lcd_puts("Status:");
@@ -157,17 +166,17 @@ void parser(char *data)
         lcd_puts("Armed");
 
         // Clear timer for Reset (just to be sure)
-        TIMER1_Clear();
+        timer1_clear();
     }
 }
 
 /*
  * Resets recv, lcd and buzzer
  */
-void rearm(char *recv)
+static void rearm(char *recv)
 {
     // Reset recv
-    for (uint8_t idx = 0; idx < DATA_SIZE + 1; idx++) {
+    for (uint8_t idx = 0; (DATA_SIZE + 1) > idx; idx++) {
         recv[idx] = '\0';
     }
 
@@ -177,7 +186,7 @@ void rearm(char *recv)
     lcd_puts("Welcome!");
 
     // clear buzzer
-    TIMER1_Clear();
+    timer1_clear();
 }
 
 /*
@@ -186,7 +195,7 @@ void rearm(char *recv)
  * Follows closely Atmel Mega 2560 document of which page 253 - 254 contain
  * relevant information. Figure 24-15.
  */
-void I2C_InitSlaveReceiver(uint8_t address)
+static void i2c_init_slave_receiver(uint8_t address)
 {
     // Devices own Slave Address
     TWAR = address;
@@ -194,7 +203,7 @@ void I2C_InitSlaveReceiver(uint8_t address)
     // Slave receiver mode setup.
     TWCR |= (1 << TWEA) | (1 << TWEN);
 
-    // Explicitly set to 0I2C_Receive
+    // Explicitly set to 0i2c_receive
     TWCR &= ~(1 << TWSTA) & ~(1 << TWSTO);
     // Eqv: TWCR = 0b01000100;
 }
@@ -202,7 +211,7 @@ void I2C_InitSlaveReceiver(uint8_t address)
 /*
  Function to receive data from Master:
  */
-void I2C_Receive(char *received)
+static void i2c_receive(char *received)
 {
     uint8_t twi_stat = 0;
     uint8_t twi_idx = 0;
@@ -213,7 +222,7 @@ void I2C_Receive(char *received)
     }
 
     // Make sure the received array is full of nulls
-    for (uint8_t idx = 0; idx < DATA_SIZE; idx++) {
+    for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
         received[idx] = '\0';
     }
 
@@ -239,11 +248,11 @@ void I2C_Receive(char *received)
     // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
     // Condition check of twi_status if previous was response of either slave
     // address or general call and ACK return
-    while ((twi_stat == 0x80) || (twi_stat == 0x90)) {
+    while ((0x80 == twi_stat) || (0x90 == twi_stat)) {
         received[twi_idx] = TWDR;
         twi_idx++;
 
-        if ((received[twi_idx - 1] == '\0') || (twi_idx >= DATA_SIZE)) {
+        if (('\0' == received[twi_idx - 1]) || (DATA_SIZE <= twi_idx)) {
             break;
         }
 
@@ -260,13 +269,13 @@ void I2C_Receive(char *received)
     }
 
     // check for NOT ACK or general Call
-    if ((twi_stat == 0x88) || (twi_stat == 0x98)) {
+    if ((0x88 == twi_stat) || (0x98 == twi_stat)) {
         received[twi_idx] = TWDR;
         twi_idx++;
     }
 
     // STOP signal or repeated start signal
-    else if ((twi_stat == 0xA0)) {
+    else if ((0xA0 == twi_stat)) {
         TWCR |= (1 << TWINT);
     }
 }
