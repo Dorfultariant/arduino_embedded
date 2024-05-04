@@ -108,9 +108,7 @@ static void parser(char *data)
 {
     // First byte of data is checked as it represents the system state.
     uint8_t idx = 0;
-
-    // LCD clear
-    lcd_clrscr();
+    ;
 
     // LCD prints and buzzer is turned on
     // based on character received
@@ -127,7 +125,6 @@ static void parser(char *data)
         lcd_gotoxy(0, 1);
         // First byte is state, print rest to LCD
         lcd_puts(&data[1]);
-
         // Correct password, so buzzer is offed via timer clear.
         timer1_clear();
     }
@@ -143,7 +140,7 @@ static void parser(char *data)
         timer1_init_mode_9();
         // Setup for playing a Note
         timer1_set_prescaler(PS_8);
-        timer1_set_target(NOTE_C1);
+        timer1_set_target(NOTE_C3);
     }
 
     else if (data[idx] == 'T') {
@@ -156,17 +153,12 @@ static void parser(char *data)
         timer1_init_mode_9();
         // Setup for playing a Note
         timer1_set_prescaler(PS_8);
-        timer1_set_target(NOTE_C5);
+        timer1_set_target(NOTE_C3);
     }
 
     else if (data[idx] == 'R') {
-        lcd_clrscr();
-        lcd_puts("Status:");
-        lcd_gotoxy(0, 1);
-        lcd_puts("Armed");
-
-        // Clear timer for Reset (just to be sure)
-        timer1_clear();
+        // Reset LCD and buzzer
+        rearm(data);
     }
 }
 
@@ -176,14 +168,15 @@ static void parser(char *data)
 static void rearm(char *recv)
 {
     // Reset recv
-    for (uint8_t idx = 0; (DATA_SIZE + 1) > idx; idx++) {
+    for (uint8_t idx = 0; (DATA_SIZE) > idx; idx++) {
         recv[idx] = '\0';
     }
 
     // Reset lcd
-    lcd_init(LCD_DISP_ON);
     lcd_clrscr();
-    lcd_puts("Welcome!");
+    lcd_puts("Status:");
+    lcd_gotoxy(0, 1);
+    lcd_puts("Armed");
 
     // clear buzzer
     timer1_clear();
