@@ -15,6 +15,7 @@
 #define BAUD 9600
 #define MYUBRR (((F_CPU / 16) / BAUD) - 1)
 
+// Max size of transferable data
 #define DATA_SIZE 16
 
 // LCD Display PINS NOTE remember to change from lcd.h also
@@ -44,15 +45,12 @@ static void i2c_receive(char *dest);
 static void rearm(char *recv);
 
 // Interrupt routine for timer
-ISR(TIMER1_COMPA_vect) 
-{ 
-    TCNT1 = 0; 
-}
+ISR(TIMER1_COMPA_vect) { TCNT1 = 0; }
 
 // Main function that includes the main loop
 int main(void)
 {
-    // // LCD PINS
+    /*      LCD PINS     */
     // OUTPUTS CONTROL
     DDRB |= (1 << LCD_RS) | (1 << LCD_RW) | (1 << LCD_EN) | (1 << BUILTIN);
     // OUTPUTS DATA
@@ -79,8 +77,7 @@ int main(void)
 
     for (;;) {
         // wait for transmission:
-        while (!(TWCR & (1 << TWINT))) 
-        {
+        while (!(TWCR & (1 << TWINT))) {
             // Built in led is blinked to indicate that board is waiting for
             // transmission.
             PORTB |= (1 << BUILTIN);
@@ -95,6 +92,7 @@ int main(void)
         // The received data is parsed and information is printed to the LCD.
         parser(recv);
     }
+
     return 0;
 }
 
@@ -116,19 +114,18 @@ static void parser(char *data)
 
     // LCD prints and buzzer is turned on
     // based on character received
-    if (data[idx] == 'M') 
-    {
+    if (data[idx] == 'M') {
         lcd_clrscr();
         lcd_puts("Status:");
         lcd_gotoxy(0, 1);
         lcd_puts("Movement!");
     }
 
-    else if (data[idx] == 'C') 
-    {
+    else if (data[idx] == 'C') {
         lcd_clrscr();
         lcd_puts("Correct Password");
         lcd_gotoxy(0, 1);
+        // First byte is state, print rest to LCD
         lcd_puts(&data[1]);
 
         // Correct password, so buzzer is offed via timer clear.
@@ -139,6 +136,7 @@ static void parser(char *data)
         lcd_clrscr();
         lcd_puts("Wrong Password:");
         lcd_gotoxy(0, 1);
+        // First byte is state, print rest to LCD
         lcd_puts(&data[1]);
 
         // Initialize timer 1 PWM mode
@@ -178,8 +176,7 @@ static void parser(char *data)
 static void rearm(char *recv)
 {
     // Reset recv
-    for (uint8_t idx = 0; (DATA_SIZE + 1) > idx; idx++) 
-    {
+    for (uint8_t idx = 0; (DATA_SIZE + 1) > idx; idx++) {
         recv[idx] = '\0';
     }
 
@@ -225,8 +222,7 @@ static void i2c_receive(char *received)
     }
 
     // Make sure the received array is full of nulls
-    for (uint8_t idx = 0; DATA_SIZE > idx; idx++) 
-    {
+    for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
         received[idx] = '\0';
     }
 
@@ -242,8 +238,7 @@ static void i2c_receive(char *received)
     TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
 
     // Waiting for TWINT to set:
-    while (!(TWCR & (1 << TWINT))) 
-    {
+    while (!(TWCR & (1 << TWINT))) {
         ;
     }
 
@@ -253,13 +248,11 @@ static void i2c_receive(char *received)
     // HEX values can be found in atmega 2560 doc page: 255, table: 24-4
     // Condition check of twi_status if previous was response of either slave
     // address or general call and ACK return
-    while ((0x80 == twi_stat) || (0x90 == twi_stat)) 
-    {
+    while ((0x80 == twi_stat) || (0x90 == twi_stat)) {
         received[twi_idx] = TWDR;
         twi_idx++;
 
-        if (('\0' == received[twi_idx - 1]) || (DATA_SIZE <= twi_idx)) 
-        {
+        if (('\0' == received[twi_idx - 1]) || (DATA_SIZE <= twi_idx)) {
             break;
         }
 
@@ -267,8 +260,7 @@ static void i2c_receive(char *received)
         TWCR |= (1 << TWINT) | (1 << TWEA) | (1 << TWEN);
 
         // Wait for TWINT to set
-        while (!(TWCR & (1 << TWINT))) 
-        {
+        while (!(TWCR & (1 << TWINT))) {
             ;
         }
 
@@ -277,15 +269,13 @@ static void i2c_receive(char *received)
     }
 
     // check for NOT ACK or general Call
-    if ((0x88 == twi_stat) || (0x98 == twi_stat)) 
-    {
+    if ((0x88 == twi_stat) || (0x98 == twi_stat)) {
         received[twi_idx] = TWDR;
         twi_idx++;
     }
 
     // STOP signal or repeated start signal
-    else if ((0xA0 == twi_stat)) 
-    {
+    else if ((0xA0 == twi_stat)) {
         TWCR |= (1 << TWINT);
     }
 }

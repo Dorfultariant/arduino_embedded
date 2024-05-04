@@ -85,13 +85,11 @@ static void i2c_init();
  */
 static void i2c_transmit(uint8_t address, const char *data);
 
-
 /*
  * Keypad code reading and verification.
  */
 static int8_t read_keypad_code(char *dest, uint8_t code_len);
 static int verify_code(char *to_be_checked, char *correct);
-
 
 int main(void)
 {
@@ -140,7 +138,7 @@ int main(void)
 
         case TIMER_ON:
             // Initializing timer 3
-            timer4_init_ctc();
+            timer3_init_ctc();
 
             // Setting the timer 3 to interrupt every second
             timer3_set_interval_second();
@@ -162,8 +160,7 @@ int main(void)
                 timer3_clear();
 
                 // Clear array so no unintended bytes are sent
-                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) 
-                {
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
@@ -185,9 +182,8 @@ int main(void)
             // Case wrong code
             else {
 
-                // Clear array of uninteded bytes
-                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) 
-                {
+                // Clear array of unintended bytes
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
@@ -217,8 +213,7 @@ int main(void)
                 g_second_counter = 0;
 
                 // Clear transfer_data
-                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) 
-                {
+                for (uint8_t idx = 0; DATA_SIZE > idx; idx++) {
                     transfer_data[idx] = '\0';
                 }
 
@@ -262,8 +257,7 @@ static void i2c_transmit(uint8_t address, const char *data)
     // Start transmission:
     TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 
-    while (!(TWCR & (1 << TWINT))) 
-    {
+    while (!(TWCR & (1 << TWINT))) {
         ;
     }
 
@@ -277,8 +271,7 @@ static void i2c_transmit(uint8_t address, const char *data)
     TWCR = (1 << TWINT) | (1 << TWEN);
 
     // Wait TWINT to set
-    while (!(TWCR & (1 << TWINT))) 
-    {
+    while (!(TWCR & (1 << TWINT))) {
         ;
     }
 
@@ -300,16 +293,15 @@ static void i2c_transmit(uint8_t address, const char *data)
 
     // Send data byte at a time until either 16 bytes has been sent or data
     // array has reached its end.
-    for (uint8_t twi_d_idx = 0; (DATA_SIZE > twi_d_idx) && ('\0' != data[twi_d_idx]); twi_d_idx++) 
-        {
+    for (uint8_t twi_d_idx = 0;
+         (DATA_SIZE > twi_d_idx) && ('\0' != data[twi_d_idx]); twi_d_idx++) {
         TWDR = data[twi_d_idx];
 
         // Reset TWINT to transmit data
         TWCR = (1 << TWINT) | (1 << TWEN);
 
         // Wait for TWINT to set
-        while (!(TWCR & (1 << TWINT))) 
-        {
+        while (!(TWCR & (1 << TWINT))) {
             ;
         }
 
@@ -337,23 +329,19 @@ static int8_t read_keypad_code(char *dest, uint8_t code_len)
     char chr = 0;
 
     // Ensure that we are working with empty array:
-    for (uint8_t idx = 0; idx < code_len; idx++) 
-    {
+    for (uint8_t idx = 0; idx < code_len; idx++) {
         dest[idx] = '\0';
     }
 
     // Get users input until the user presses [A]ccept on the keypad and
     // user has given long enough password.
-    for (;;) 
-    {
-        chr = keypad_get_key();
+    for (;;) {
+        chr = KEYPAD_GetKey();
 
         // Check for digit in range 0 - 9
-        if (('0' <= chr) && ( '9' >= chr)) 
-        {
+        if (('0' <= chr) && ('9' >= chr)) {
             // We want to store the last code_len amount of digits
-            if (index >= code_len) 
-            {
+            if (index >= code_len) {
                 memmove(dest, dest + 1, code_len - 1);
                 index--;
             }
@@ -361,14 +349,12 @@ static int8_t read_keypad_code(char *dest, uint8_t code_len)
         }
 
         // Allow the [D]eletion of previous char if it exists
-        else if (chr == 'D' && index > 0)
-        {
+        else if (chr == 'D' && index > 0) {
             index--;
         }
-        
+
         // End point to exit function if enough digits given and [A]ccept
-        else if (('A' == chr) && (index == code_len)) 
-        {
+        else if (('A' == chr) && (index == code_len)) {
             break;
         }
     }
@@ -393,8 +379,7 @@ static int verify_code(char *to_be_checked, char *correct)
 {
     uint8_t idx = 0;
     while (('\0' != to_be_checked[idx]) && ('\0' != correct[idx])) {
-        if (to_be_checked[idx] != correct[idx]) 
-        {
+        if (to_be_checked[idx] != correct[idx]) {
             return 0;
         }
         idx++;
@@ -410,8 +395,7 @@ ISR(TIMER3_COMPA_vect)
 {
     TCNT3 = 0;
     g_second_counter++;
-    if (ALARM_TIMER <= g_second_counter) 
-    {
+    if (ALARM_TIMER <= g_second_counter) {
         // Led indicating ALARM is ON
         PORTH |= (1 << ALARM_LED);
 

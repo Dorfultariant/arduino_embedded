@@ -84,10 +84,7 @@ void timer1_set_prescaler(const uint16_t prescaler)
  * @param uint16_t value of target TOP.
  * @returns Void
  */
-void timer1_set_target(uint16_t value) 
-{ 
-    OCR1A = value; 
-}
+void timer1_set_target(uint16_t value) { OCR1A = value; }
 
 /*
  EOF

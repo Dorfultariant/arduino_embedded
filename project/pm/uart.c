@@ -16,12 +16,10 @@ void usart_init(unsigned int ubrr)
 
 static int uart_putchar(char c, FILE *stream)
 {
-    if (c == '\n') 
-    {
+    if (c == '\n') {
         uart_putchar('\r', stream);
     }
-    while (!(UCSR0A & (1 << UDRE0)))
-    {
+    while (!(UCSR0A & (1 << UDRE0))) {
         ;
     }
 
@@ -32,14 +30,12 @@ static int uart_putchar(char c, FILE *stream)
 static int uart_readchar(FILE *stream)
 {
     int c = fgetc(stream);
-    
-    if (c != -1) 
-    {
+
+    if (-1 != c) {
         return c;
     }
 
-    else 
-    {
+    else {
         return -1;
     }
 }
