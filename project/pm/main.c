@@ -36,17 +36,18 @@
 #define ALARM_TIMER 10
 
 // Signals to cause an alarm on UNO
-const char wrong_code[] = "W";
-const char times_up[] = "T";
+const char g_wrong_code_signal[] = "W";
+const char g_times_up_signal[] = "T";
 
 // Correct signal
-const char correct_code[] = "C";
+const char g_correct_code_signal[] = "C";
 
 // Timer is started signal
-const char movement[] = "M";
+const char g_movement_signal[] = "M";
 
 // Reset signal
-const char rearm[] = "R";
+const char g_rearm_signal[] = "R";
+
 
 // All pins that are used on the Mega
 const int PIR_SIGNAL = PE3;
@@ -94,7 +95,7 @@ static int verify_code(char *to_be_checked, char *correct);
 int main(void)
 {
     // Define the correct keycode.
-    char correct_code[CODE_ARRAY_LENGTH] = "0423";
+    char correct_keycode[CODE_ARRAY_LENGTH] = "0423";
 
     // Initialize empty code given by user.
     char users_code[CODE_ARRAY_LENGTH] = {'\0'};
@@ -109,7 +110,7 @@ int main(void)
     // Output demo for alarm buzzer (currently RED LED)
     DDRH |= (1 << ALARM_LED) | (1 << I2C_ERROR) | (1 << I2C_OK);
 
-    // PIR sensor input upon movement
+    // PIR sensor input upon Movement
     DDRE &= ~(1 << PIR_SIGNAL);
 
     // Input pin for rearming the system.
@@ -127,12 +128,12 @@ int main(void)
     while (1) {
         switch (g_state) {
         case PIR_SENSE:
-            // If PIR senses movement move to TIMER_ON g_state and sent g_state
+            // If PIR senses Movement. Move to TIMER_ON g_state and sent g_state
             // information to UNO
             if (PINE & (1 << PIR_SIGNAL)) {
                 g_state = TIMER_ON;
                 i2c_init();
-                i2c_transmit(SLAVE_ADDRESS, movement);
+                i2c_transmit(SLAVE_ADDRESS, g_movement_signal);
             }
             break;
 
@@ -152,7 +153,7 @@ int main(void)
             read_keypad_code(users_code, CODE_ARRAY_LENGTH - 1);
 
             // Verify the codes correctness
-            g_is_code_valid = verify_code(users_code, correct_code);
+            g_is_code_valid = verify_code(users_code, correct_keycode);
 
             // Case correct code
             if (g_is_code_valid) {
@@ -165,7 +166,7 @@ int main(void)
                 }
 
                 // Concatenate the data to be sent
-                strcat(transfer_data, correct_code);
+                strcat(transfer_data, g_correct_code_signal);
                 strcat(transfer_data, users_code);
 
                 // Turn off alarm led
@@ -174,7 +175,6 @@ int main(void)
                 // Transmit information to Slave
                 i2c_init();
                 i2c_transmit(SLAVE_ADDRESS, transfer_data);
-
                 // Move to the final g_state
                 g_state = PIR_TIMER_ALARM_OFF;
             }
@@ -191,7 +191,7 @@ int main(void)
                 PORTH |= (1 << ALARM_LED);
 
                 // Concatenate the data to be sent
-                strcat(transfer_data, wrong_code);
+                strcat(transfer_data, g_wrong_code_signal);
                 strcat(transfer_data, users_code);
 
                 // Initialize connection and Send data
@@ -219,7 +219,7 @@ int main(void)
 
                 // Send g_state information to UNO
                 i2c_init();
-                i2c_transmit(SLAVE_ADDRESS, rearm);
+                i2c_transmit(SLAVE_ADDRESS, g_rearm_signal);
             }
             break;
         }
@@ -236,6 +236,11 @@ int main(void)
  */
 static void i2c_init()
 {
+    // Clear registers
+    TWSR = 0;
+    TWBR = 0;
+    TWCR = 0;
+
     // Bit Rate generator setup to 400 000 Hz -> F_CPU / (16 + 2 * TWBR *
     // 4^(TWSR):
     TWSR = 0x00;         // Prescaler to 1
@@ -277,7 +282,7 @@ static void i2c_transmit(uint8_t address, const char *data)
 
     twi_stat = (TWSR & 0xF8);
 
-    // Check if the connection to Slave is successful (Slave returns ACK)
+    // Check if the connection to Slave fails (Slave does not return ACK)
     if ((twi_stat != 0x18) && (twi_stat != 0x40)) {
         // Set error led ON
         PORTH |= (1 << I2C_ERROR);
@@ -405,7 +410,7 @@ ISR(TIMER3_COMPA_vect)
 
         // Send system g_state information to UNO
         i2c_init();
-        i2c_transmit(SLAVE_ADDRESS, times_up);
+        i2c_transmit(SLAVE_ADDRESS, g_times_up_signal);
     }
 }
 
