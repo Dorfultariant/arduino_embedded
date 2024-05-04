@@ -4965,7 +4965,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 187.96) (xy 113.03 171.45)
+			(xy 113.03 187.96) (xy 113.03 185.42)
 		)
 		(stroke
 			(width 0)
@@ -5372,6 +5372,16 @@
 			(type default)
 		)
 		(uuid "ec7f689a-818c-40aa-8a39-6eaef588c462")
+	)
+	(wire
+		(pts
+			(xy 113.03 177.8) (xy 113.03 171.45)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee9a2ac3-b62a-4e33-9f7f-a0403f819a3a")
 	)
 	(wire
 		(pts
@@ -5937,6 +5947,73 @@
 			(project "project_schematic"
 				(path "/e93d8f61-9bc6-44b8-8b1c-4bc72ef68edc"
 					(reference "BZ1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 113.03 181.61 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8899d9b7-789d-48e2-985f-9d8a215f3ee5")
+		(property "Reference" "R8"
+			(at 110.49 181.61 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 113.03 181.61 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 114.808 181.61 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 113.03 181.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 113.03 181.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fa81aa96-b369-4f8f-b5a7-cd952e6038c1")
+		)
+		(pin "2"
+			(uuid "b30cf415-d8c5-4803-a1ac-eed99c1e7be8")
+		)
+		(instances
+			(project "project_schematic"
+				(path "/e93d8f61-9bc6-44b8-8b1c-4bc72ef68edc"
+					(reference "R8")
 					(unit 1)
 				)
 			)
